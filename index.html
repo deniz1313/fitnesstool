@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fitnesstool">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Fitnesstool – Test</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f6f6f4; --card:#fff; --ink:#1d1d1b; --quiet:#6b6b66; --line:#d9d9d4; --accent:#2f6fd6; --ok:#2e7d32; --bad:#c62828; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#20201e; --ink:#ececea; --quiet:#a3a39d; --line:#3a3a37; --accent:#6ea0f0; --ok:#7bc47f; --bad:#ef7a7a; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); background:var(--bg); color:var(--ink);
+         font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 4px 0 2px; }
+  .sub { color: var(--quiet); margin: 0 0 16px; font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .card h2 { font-size: 15px; margin: 0 0 8px; }
+  button { width: 100%; font: inherit; font-weight: 600; padding: 13px; margin: 6px 0; border-radius: 10px; border: 1px solid var(--accent);
+           background: var(--accent); color: #fff; }
+  button.secondary { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .45; }
+  .row { display:flex; justify-content:space-between; gap:12px; font-size:14px; padding: 3px 0; }
+  .row span:first-child { color: var(--quiet); }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  #log { font: 12.5px/1.4 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow:auto; margin:0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fitnesstool – Test</h1>
+  <p class="sub">Prüft Anmeldung und Speichern in OneDrive. Noch keine Trainingsfunktionen.</p>
+
+  <div class="card">
+    <h2>Status</h2>
+    <div class="row"><span>Geöffnet als</span><span id="mode">–</span></div>
+    <div class="row"><span>Angemeldet</span><span id="who">nein</span></div>
+    <div class="row"><span>Letzte volle Anmeldung</span><span id="lastLogin">–</span></div>
+    <div class="row"><span>Letzter stiller Zugriff</span><span id="lastSilent">–</span></div>
+  </div>
+
+  <div class="card" id="loginCard">
+    <h2>1. Anmelden</h2>
+    <button id="btnRedirect">Anmelden (Weiterleitung)</button>
+    <button id="btnPopup" class="secondary">Anmelden (eigenes Fenster)</button>
+  </div>
+
+  <div class="card">
+    <h2>2. OneDrive testen</h2>
+    <button id="btnWrite" disabled>Testdatei schreiben</button>
+    <button id="btnRead" class="secondary" disabled>Testdatei lesen</button>
+  </div>
+
+  <div class="card">
+    <h2>Protokoll</h2>
+    <pre id="log"></pre>
+    <button id="btnLogout" class="secondary" disabled>Abmelden</button>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js" integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ" crossorigin="anonymous"></script>
+<script>
+  // Kennungen aus der App-Registrierung (kein Geheimnis)
+  const CLIENT_ID = "b1012295-4bf2-495f-91dd-3fd1a26d470a";
+  const REDIRECT_URI = "https://deniz1313.github.io/fitnesstool/";
+  const SCOPES = ["Files.ReadWrite.AppFolder"];
+  const TEST_FILE = "verbindungstest.json";
+  const GRAPH = "https://graph.microsoft.com/v1.0/me/drive/special/approot:/" + TEST_FILE + ":/content";
+
+  const $ = id => document.getElementById(id);
+  const fmt = d => new Date(d).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "medium" });
+  function log(msg, cls) {
+    const line = document.createElement("div");
+    line.textContent = new Date().toLocaleTimeString("de-DE") + "  " + msg;
+    if (cls) line.className = cls;
+    $("log").prepend(line);
+  }
+  function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+  function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+
+  if (typeof msal === "undefined") {
+    log("Die Anmelde-Bibliothek von Microsoft konnte nicht geladen werden (jsDelivr).", "bad");
+    throw new Error("MSAL fehlt");
+  }
+
+  const standalone =window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  $("mode").textContent = standalone ? "App vom Startbildschirm" : "Browser";
+
+  const pca = new msal.PublicClientApplication({
+    auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/consumers", redirectUri: REDIRECT_URI },
+    cache: { cacheLocation: "localStorage" }
+  });
+
+  function account() { return pca.getActiveAccount() || pca.getAllAccounts()[0] || null; }
+
+  function refresh() {
+    const acc = account();
+    $("who").textContent = acc ? acc.username : "nein";
+    $("who").className = acc ? "ok" : "";
+    $("lastLogin").textContent = load("ft_lastLogin") ? fmt(Number(load("ft_lastLogin"))) : "–";
+    $("lastSilent").textContent = load("ft_lastSilent") ? fmt(Number(load("ft_lastSilent"))) : "–";
+    ["btnWrite", "btnRead", "btnLogout"].forEach(id => $(id).disabled = !acc);
+  }
+
+  function afterLogin(result, how) {
+    if (!result || !result.account) return;
+    pca.setActiveAccount(result.account);
+    store("ft_lastLogin", String(Date.now()));
+    log("Angemeldet über " + how + " als " + result.account.username, "ok");
+    refresh();
+  }
+
+  async function token() {
+    const acc = account();
+    if (!acc) throw new Error("Nicht angemeldet");
+    try {
+      const r = await pca.acquireTokenSilent({ scopes: SCOPES, account: acc });
+      store("ft_lastSilent", String(Date.now()));
+      refresh();
+      return r.accessToken;
+    } catch (e) {
+      if (e instanceof msal.InteractionRequiredAuthError) {
+        log("Stiller Zugriff nicht möglich, neue Anmeldung nötig (" + e.errorCode + ")", "bad");
+        await pca.acquireTokenRedirect({ scopes: SCOPES, account: acc });
+      }
+      throw e;
+    }
+  }
+
+  async function init() {
+    try {
+      await pca.initialize();
+      const result = await pca.handleRedirectPromise();
+      if (result) afterLogin(result, "Weiterleitung");
+      else if (account()) { pca.setActiveAccount(account()); log("Anmeldung vom letzten Mal gefunden"); }
+    } catch (e) {
+      log("Fehler beim Start: " + (e.errorCode || "") + " " + e.message, "bad");
+    }
+    refresh();
+  }
+
+  $("btnRedirect").onclick = async () => {
+    try { await pca.loginRedirect({ scopes: SCOPES, prompt: "select_account" }); }
+    catch (e) { log("Weiterleitung fehlgeschlagen: " + (e.errorCode || "") + " " + e.message, "bad"); }
+  };
+
+  $("btnPopup").onclick = async () => {
+    try { afterLogin(await pca.loginPopup({ scopes: SCOPES, prompt: "select_account" }), "eigenes Fenster"); }
+    catch (e) { log("Fenster-Anmeldung fehlgeschlagen: " + (e.errorCode || "") + " " + e.message, "bad"); }
+  };
+
+  $("btnWrite").onclick = async () => {
+    try {
+      const body = JSON.stringify({ geschrieben: new Date().toISOString(), geraet: navigator.userAgent, modus: $("mode").textContent }, null, 2);
+      const res = await fetch(GRAPH, { method: "PUT", headers: { Authorization: "Bearer " + await token(), "Content-Type": "application/json" }, body });
+      if (!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 200));
+      const item = await res.json();
+      log("Gespeichert in OneDrive: " + (item.parentReference && item.parentReference.path ? item.parentReference.path.replace(/^\/drive\/root:/, "") + "/" : "") + item.name, "ok");
+    } catch (e) { log("Schreiben fehlgeschlagen: " + e.message, "bad"); }
+  };
+
+  $("btnRead").onclick = async () => {
+    try {
+      const res = await fetch(GRAPH, { headers: { Authorization: "Bearer " + await token() } });
+      if (res.status === 404) { log("Noch keine Testdatei vorhanden. Erst schreiben.", "bad"); return; }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      log("Gelesen: geschrieben am " + fmt(data.geschrieben) + " (" + data.modus + ")", "ok");
+    } catch (e) { log("Lesen fehlgeschlagen: " + e.message, "bad"); }
+  };
+
+  $("btnLogout").onclick = async () => {
+    const acc = account();
+    try { await pca.logoutRedirect({ account: acc, postLogoutRedirectUri: REDIRECT_URI }); }
+    catch (e) { log("Abmelden fehlgeschlagen: " + e.message, "bad"); }
+  };
+
+  init();
+</script>
+</body>
+</html>
