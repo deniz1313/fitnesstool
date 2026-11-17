@@ -7,178 +7,310 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Fitnesstool">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Fitnesstool – Test</title>
+<title>Fitnesstool</title>
 <style>
-  :root { color-scheme: light dark; --bg:#f6f6f4; --card:#fff; --ink:#1d1d1b; --quiet:#6b6b66; --line:#d9d9d4; --accent:#2f6fd6; --ok:#2e7d32; --bad:#c62828; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#20201e; --ink:#ececea; --quiet:#a3a39d; --line:#3a3a37; --accent:#6ea0f0; --ok:#7bc47f; --bad:#ef7a7a; } }
+  :root { color-scheme: light dark; --bg:#f6f6f4; --card:#fff; --ink:#1d1d1b; --quiet:#6b6b66; --line:#dcdcd6; --accent:#2f6fd6; --accent-soft:#e6eefb; --ok:#2e7d32; --bad:#c62828; --warn:#a15c00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#20201e; --ink:#ececea; --quiet:#a3a39d; --line:#3a3a37; --accent:#6ea0f0; --accent-soft:#1f2c42; --ok:#7bc47f; --bad:#ef7a7a; --warn:#e0a458; } }
   * { box-sizing: border-box; }
-  body { margin:0; padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); background:var(--bg); color:var(--ink);
-         font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 520px; margin: 0 auto; }
-  h1 { font-size: 22px; margin: 4px 0 2px; }
-  .sub { color: var(--quiet); margin: 0 0 16px; font-size: 14px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  .card h2 { font-size: 15px; margin: 0 0 8px; }
-  button { width: 100%; font: inherit; font-weight: 600; padding: 13px; margin: 6px 0; border-radius: 10px; border: 1px solid var(--accent);
-           background: var(--accent); color: #fff; }
+  body { margin:0; padding: calc(12px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); background:var(--bg); color:var(--ink);
+         font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 6px 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  .sub { color: var(--quiet); margin: 0 0 14px; font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  button { font: inherit; font-weight: 600; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 13px 14px; width: 100%; margin: 6px 0; }
   button.secondary { background: transparent; color: var(--accent); }
-  button:disabled { opacity: .45; }
-  .row { display:flex; justify-content:space-between; gap:12px; font-size:14px; padding: 3px 0; }
+  button.link { background: none; border: none; color: var(--accent); width: auto; padding: 6px 0; font-weight: 500; }
+  .choices { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .choices.two { grid-template-columns: 1fr 1fr; }
+  .choice { background: var(--card); color: var(--ink); border: 1px solid var(--line); text-align: left; margin: 0; }
+  .choice small { display: block; color: var(--quiet); font-weight: 400; font-size: 13px; margin-top: 2px; }
+  .choice.on { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .label { font-size: 13px; color: var(--quiet); text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 6px; }
+  .ex { border-top: 1px solid var(--line); padding: 10px 0 2px; }
+  .ex:first-of-type { border-top: none; padding-top: 0; }
+  .exname { font-weight: 600; }
+  .tag { display: inline-block; font-size: 12px; color: var(--quiet); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-weight: 500; vertical-align: 1px; }
+  .row { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 15px; margin-top: 4px; }
   .row span:first-child { color: var(--quiet); }
-  .ok { color: var(--ok); } .bad { color: var(--bad); }
-  #log { font: 12.5px/1.4 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow:auto; margin:0; }
+  .today { color: var(--accent); font-weight: 600; }
+  .hint { font-size: 13px; color: var(--warn); margin-top: 3px; }
+  .ss { border-left: 3px solid var(--accent); padding-left: 10px; margin-left: 2px; }
+  .sslabel { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 2px; }
+  .muted { color: var(--quiet); font-size: 14px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; }
+  .err { color: var(--bad); font-size: 14px; white-space: pre-wrap; }
+  ul.plain { margin: 4px 0 0; padding-left: 18px; }
+  ul.plain li { margin: 2px 0; }
 </style>
 </head>
 <body>
-<main>
-  <h1>Fitnesstool – Test</h1>
-  <p class="sub">Prüft Anmeldung und Speichern in OneDrive. Noch keine Trainingsfunktionen.</p>
-
-  <div class="card">
-    <h2>Status</h2>
-    <div class="row"><span>Geöffnet als</span><span id="mode">–</span></div>
-    <div class="row"><span>Angemeldet</span><span id="who">nein</span></div>
-    <div class="row"><span>Letzte volle Anmeldung</span><span id="lastLogin">–</span></div>
-    <div class="row"><span>Letzter stiller Zugriff</span><span id="lastSilent">–</span></div>
-  </div>
-
-  <div class="card" id="loginCard">
-    <h2>1. Anmelden</h2>
-    <button id="btnRedirect">Anmelden (Weiterleitung)</button>
-    <button id="btnPopup" class="secondary">Anmelden (eigenes Fenster)</button>
-  </div>
-
-  <div class="card">
-    <h2>2. OneDrive testen</h2>
-    <button id="btnWrite" disabled>Testdatei schreiben</button>
-    <button id="btnRead" class="secondary" disabled>Testdatei lesen</button>
-  </div>
-
-  <div class="card">
-    <h2>Protokoll</h2>
-    <pre id="log"></pre>
-    <button id="btnLogout" class="secondary" disabled>Abmelden</button>
-  </div>
-</main>
+<main id="app"><p class="muted">Lädt …</p></main>
 
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js" integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ" crossorigin="anonymous"></script>
 <script>
-  // Kennungen aus der App-Registrierung (kein Geheimnis)
-  const CLIENT_ID = "b1012295-4bf2-495f-91dd-3fd1a26d470a";
-  const REDIRECT_URI = "https://deniz1313.github.io/fitnesstool/";
-  const SCOPES = ["Files.ReadWrite.AppFolder"];
-  const TEST_FILE = "verbindungstest.json";
-  const GRAPH = "https://graph.microsoft.com/v1.0/me/drive/special/approot:/" + TEST_FILE + ":/content";
+"use strict";
+// ------------------------------------------------------------ Einstellungen
+const CLIENT_ID = "b1012295-4bf2-495f-91dd-3fd1a26d470a";
+const REDIRECT_URI = "https://deniz1313.github.io/fitnesstool/";
+const SCOPES = ["Files.ReadWrite.AppFolder"];
+const DATA_FILE = "fitnesstool-daten.json";
+const DATA_URL = "https://graph.microsoft.com/v1.0/me/drive/special/approot:/" + DATA_FILE + ":/content";
+const CACHE_KEY = "ft_daten_cache";
 
-  const $ = id => document.getElementById(id);
-  const fmt = d => new Date(d).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "medium" });
-  function log(msg, cls) {
-    const line = document.createElement("div");
-    line.textContent = new Date().toLocaleTimeString("de-DE") + "  " + msg;
-    if (cls) line.className = cls;
-    $("log").prepend(line);
+const app = document.getElementById("app");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const kg = n => (Math.round(n * 100) / 100).toLocaleString("de-DE");
+const dateDE = iso => { const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; };
+const weekday = iso => ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(iso + "T12:00:00").getDay()];
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+let pca = null, data = null, state = { split: null, location: null };
+
+// ------------------------------------------------------------ Anmeldung und Laden
+function account() { return pca.getActiveAccount() || pca.getAllAccounts()[0] || null; }
+
+async function token() {
+  const acc = account();
+  try { return (await pca.acquireTokenSilent({ scopes: SCOPES, account: acc })).accessToken; }
+  catch (e) {
+    if (e instanceof msal.InteractionRequiredAuthError) { await pca.acquireTokenRedirect({ scopes: SCOPES, account: acc }); }
+    throw e;
   }
-  function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
-  function load(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+}
 
-  if (typeof msal === "undefined") {
-    log("Die Anmelde-Bibliothek von Microsoft konnte nicht geladen werden (jsDelivr).", "bad");
-    throw new Error("MSAL fehlt");
-  }
+async function loadData() {
+  const res = await fetch(DATA_URL, { headers: { Authorization: "Bearer " + await token() }, cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("OneDrive antwortet mit " + res.status);
+  const d = await res.json();
+  store(CACHE_KEY, JSON.stringify(d));
+  return d;
+}
 
-  const standalone =window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
-  $("mode").textContent = standalone ? "App vom Startbildschirm" : "Browser";
-
-  const pca = new msal.PublicClientApplication({
+async function init() {
+  if (typeof msal === "undefined") { app.innerHTML = `<p class="err">Die Anmelde-Bibliothek von Microsoft konnte nicht geladen werden. Bitte Internetverbindung prüfen und neu laden.</p>`; return; }
+  pca = new msal.PublicClientApplication({
     auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/consumers", redirectUri: REDIRECT_URI },
     cache: { cacheLocation: "localStorage" }
   });
-
-  function account() { return pca.getActiveAccount() || pca.getAllAccounts()[0] || null; }
-
-  function refresh() {
-    const acc = account();
-    $("who").textContent = acc ? acc.username : "nein";
-    $("who").className = acc ? "ok" : "";
-    $("lastLogin").textContent = load("ft_lastLogin") ? fmt(Number(load("ft_lastLogin"))) : "–";
-    $("lastSilent").textContent = load("ft_lastSilent") ? fmt(Number(load("ft_lastSilent"))) : "–";
-    ["btnWrite", "btnRead", "btnLogout"].forEach(id => $(id).disabled = !acc);
+  try {
+    await pca.initialize();
+    const r = await pca.handleRedirectPromise();
+    if (r && r.account) pca.setActiveAccount(r.account);
+  } catch (e) { return showLogin("Anmeldung fehlgeschlagen: " + (e.errorCode || e.message)); }
+  if (!account()) return showLogin();
+  pca.setActiveAccount(account());
+  const cached = load(CACHE_KEY);
+  if (cached) { data = JSON.parse(cached); showStart(); }
+  try {
+    const fresh = await loadData();
+    if (!fresh) return showMissing();
+    data = fresh; if (!cached) showStart(); else refreshStart();
+  } catch (e) {
+    if (!cached) showError("Daten konnten nicht geladen werden: " + e.message);
   }
+}
 
-  function afterLogin(result, how) {
-    if (!result || !result.account) return;
-    pca.setActiveAccount(result.account);
-    store("ft_lastLogin", String(Date.now()));
-    log("Angemeldet über " + how + " als " + result.account.username, "ok");
-    refresh();
+function showLogin(msg) {
+  app.innerHTML = `<h1>Fitnesstool</h1><p class="sub">Melde dich mit deinem Microsoft-Konto an. Deine Trainingsdaten liegen in deinem OneDrive.</p>
+    ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
+    <button id="login">Anmelden</button>`;
+  document.getElementById("login").onclick = () => pca.loginRedirect({ scopes: SCOPES, prompt: "select_account" });
+}
+
+function showMissing() {
+  app.innerHTML = `<h1>Fitnesstool</h1><div class="card"><h2>Trainingsdaten fehlen</h2>
+    <p class="muted">In deinem OneDrive liegt unter <b>Apps → Fitnesstool</b> noch keine Datei <b>${DATA_FILE}</b>. Lege sie dort ab und lade die Seite neu.</p>
+    <button onclick="location.reload()">Neu laden</button></div>`;
+}
+
+function showError(msg) {
+  app.innerHTML = `<h1>Fitnesstool</h1><p class="err">${esc(msg)}</p><button onclick="location.reload()">Neu laden</button>`;
+}
+
+// ------------------------------------------------------------ Auswertung
+const EX = () => Object.fromEntries(data.exercises.map(e => [e.id, e]));
+const SPLIT = id => (data.splits.find(s => s.id === id) || {}).name || id;
+const LOC = id => (data.locations.find(l => l.id === id) || {}).name || id;
+const sessionsDesc = () => [...data.sessions].sort((a, b) => b.date.localeCompare(a.date));
+
+function lastSessionOf(split, location) {
+  const all = sessionsDesc().filter(s => s.split === split && s.items.length);
+  return all.find(s => s.location === location) || all[0] || null;
+}
+
+// alle Arbeitssätze einer Übung in einer Einheit, in Reihenfolge
+function setsIn(session, exId) {
+  const out = [];
+  for (const it of session.items) {
+    const j = it.exercises.indexOf(exId);
+    if (j < 0) continue;
+    for (const r of it.sets) if (r[j] && !r[j].warmup) out.push(r[j]);
   }
+  return out;
+}
 
-  async function token() {
-    const acc = account();
-    if (!acc) throw new Error("Nicht angemeldet");
-    try {
-      const r = await pca.acquireTokenSilent({ scopes: SCOPES, account: acc });
-      store("ft_lastSilent", String(Date.now()));
-      refresh();
-      return r.accessToken;
-    } catch (e) {
-      if (e instanceof msal.InteractionRequiredAuthError) {
-        log("Stiller Zugriff nicht möglich, neue Anmeldung nötig (" + e.errorCode + ")", "bad");
-        await pca.acquireTokenRedirect({ scopes: SCOPES, account: acc });
-      }
-      throw e;
+// Werte vom letzten Mal für einen Übungsblock: gleicher Block (gleiche Übungen, gleiche Stelle) bevorzugt, gleicher Ort bevorzugt
+function itemKey(it) { return it.exercises.join("+"); }
+function occurrence(session, item) {
+  const k = itemKey(item); let n = 0;
+  for (const it of session.items) { if (it === item) return n; if (itemKey(it) === k) n++; }
+  return 0;
+}
+function itemSets(it, exId) { const j = it.exercises.indexOf(exId); return it.sets.map(r => r[j]).filter(e => e && !e.warmup); }
+function lastFor(exId, location, tplSession, tplItem) {
+  const key = itemKey(tplItem), occ = occurrence(tplSession, tplItem);
+  const ordered = sessionsDesc().filter(s => s.location === location).concat(sessionsDesc().filter(s => s.location !== location));
+  for (const s of ordered) {
+    const same = s.items.filter(it => itemKey(it) === key);
+    if (same.length) { const it = same[Math.min(occ, same.length - 1)]; const sets = itemSets(it, exId); if (sets.length) return { session: s, sets }; }
+  }
+  for (const s of ordered) {
+    const it = s.items.find(x => x.exercises.includes(exId));
+    if (it) { const sets = itemSets(it, exId); if (sets.length) return { session: s, sets }; }
+  }
+  return null;
+}
+
+function fmtSet(e, ex) {
+  let t = "";
+  if (e.seconds != null) t = e.seconds + " s";
+  else t = String(e.reps);
+  if (e.weight != null) t += " × " + kg(e.weight) + " kg";
+  if (e.added) t += " (+" + kg(e.added) + " kg)";
+  if (e.perSide) t += "/Seite";
+  if (e.assisted) t += " +" + e.assisted + " mit Hilfe";
+  if (e.drop) t += " ↓ " + e.drop.reps + (e.drop.weight ? " × " + kg(e.drop.weight) + " kg" : e.drop.ex ? " " + (EX()[e.drop.ex] || {}).name : " ohne");
+  return t;
+}
+
+function nextHeavier(exId, w) {
+  let best = null;
+  for (const s of data.sessions) for (const it of s.items) {
+    const j = it.exercises.indexOf(exId);
+    if (j < 0) continue;
+    for (const r of it.sets) { const x = r[j] && r[j].weight; if (x > w && (best == null || x < best)) best = x; }
+  }
+  return best;
+}
+
+// Vorschlag für heute nach den vereinbarten Regeln
+function suggest(exId, sets) {
+  const ex = EX()[exId];
+  if (!sets.length) return { text: "–" };
+  if (ex.measure === "time") {
+    const top = Math.max(...sets.map(s => s.seconds || 0));
+    if (sets.every(s => (s.seconds || 0) >= 60)) return { text: sets.map(s => s.seconds + " s").join(" · "), hint: "60 s erreicht – schwerere Variante versuchen" };
+    return { text: sets.map(s => Math.min(60, (s.seconds || 0) + 5) + " s").join(" · ") };
+  }
+  if (ex.measure === "weight" && !sets.some(s => s.weight)) {
+    if (sets.every(s => s.reps >= 12)) return { text: sets.map(() => "8").join(" · ") + " × höheres Gewicht", hint: "Alle Sätze bei 12 – Gewicht erhöhen (letztes Mal kein Gewicht notiert)" };
+    return { text: sets.map(s => Math.min(12, s.reps + 1)).join(" · "), hint: "Letztes Mal kein Gewicht notiert" };
+  }
+  if (ex.measure === "weight") {
+    const w = Math.max(...sets.map(s => s.weight || 0));
+    const work = sets.filter(s => (s.weight || 0) === w);
+    const ps = work.some(s => s.perSide) ? "/Seite" : "";
+    if (work.every(s => s.reps >= 12)) {
+      if (ex.equipment === "maschine") return { text: work.map(() => "8").join(" · ") + " × nächste Stufe", hint: "Alle Sätze bei 12 – nächste Stufe über " + kg(w) + " kg" };
+      const nw = nextHeavier(exId, w) || w + 2.5;
+      return { text: work.map(() => "8").join(" · ") + " × " + kg(nw) + " kg" + ps, hint: "Alle Sätze bei 12 – Gewicht erhöhen" };
     }
+    return { text: work.map(s => Math.min(12, s.reps + 1)).join(" · ") + " × " + kg(w) + " kg" + ps };
   }
-
-  async function init() {
-    try {
-      await pca.initialize();
-      const result = await pca.handleRedirectPromise();
-      if (result) afterLogin(result, "Weiterleitung");
-      else if (account()) { pca.setActiveAccount(account()); log("Anmeldung vom letzten Mal gefunden"); }
-    } catch (e) {
-      log("Fehler beim Start: " + (e.errorCode || "") + " " + e.message, "bad");
-    }
-    refresh();
+  // Wiederholungen, mit oder ohne Zusatzgewicht
+  const weighted = sets.filter(s => s.added), plain = sets.filter(s => !s.added);
+  const parts = [], hints = [];
+  if (weighted.length) {
+    const a = Math.max(...weighted.map(s => s.added));
+    const ws = weighted.filter(s => s.added === a);
+    const [lo, hi] = ["klimmzuege", "dips", "liegestuetze", "australian-pullups"].includes(exId) ? [5, 8] : [8, 12];
+    if (ws.every(s => s.reps >= hi)) { parts.push(ws.map(() => String(lo)).join(" · ") + " (+" + kg(a + 2.5) + " kg)"); hints.push("Mit Zusatzgewicht alle Sätze bei " + hi + " – 2,5 kg mehr"); }
+    else parts.push(ws.map(s => Math.min(hi, s.reps + 1)).join(" · ") + " (+" + kg(a) + " kg)");
   }
+  if (plain.length) {
+    if (plain.every(s => s.reps >= 12)) { parts.push(plain.map(() => "12").join(" · ")); if (!weighted.length) hints.push("Alle Sätze bei 12 – Zusatzgewicht oder schwerere Variante"); }
+    else parts.push(plain.map(s => Math.min(12, s.reps + 1)).join(" · "));
+  }
+  return { text: parts.join("  ·  dann "), hint: hints.join(" · ") || null };
+}
 
-  $("btnRedirect").onclick = async () => {
-    try { await pca.loginRedirect({ scopes: SCOPES, prompt: "select_account" }); }
-    catch (e) { log("Weiterleitung fehlgeschlagen: " + (e.errorCode || "") + " " + e.message, "bad"); }
-  };
+function grips(sets) {
+  const g = [...new Set(sets.map(s => s.grip).filter(Boolean))];
+  return g.length ? g.join(", ") : null;
+}
 
-  $("btnPopup").onclick = async () => {
-    try { afterLogin(await pca.loginPopup({ scopes: SCOPES, prompt: "select_account" }), "eigenes Fenster"); }
-    catch (e) { log("Fenster-Anmeldung fehlgeschlagen: " + (e.errorCode || "") + " " + e.message, "bad"); }
-  };
+// ------------------------------------------------------------ Ansichten
+function showStart() {
+  const splits = data.splits;
+  const lastAny = sessionsDesc()[0];
+  if (!state.location) state.location = lastAny ? lastAny.location : "fitx";
+  app.innerHTML = `
+    <div class="bar"><h1>Fitnesstool</h1><button class="link" id="logout">Abmelden</button></div>
+    <p class="sub">Was trainierst du heute?</p>
+    <div class="label">Ort</div>
+    <div class="choices two">${data.locations.map(l => `<button class="choice ${state.location === l.id ? "on" : ""}" data-loc="${l.id}">${esc(l.name)}</button>`).join("")}</div>
+    <div class="label">Training</div>
+    <div class="choices" id="splits">${splits.map(s => {
+      const last = sessionsDesc().find(x => x.split === s.id);
+      return `<button class="choice" data-split="${s.id}">${esc(s.name)}<small>${last ? "Zuletzt " + weekday(last.date) + ", " + dateDE(last.date) + " · " + esc(LOC(last.location)) : "noch nicht trainiert"}</small></button>`;
+    }).join("")}</div>
+    <p class="muted" style="margin-top:18px">${data.sessions.length} Einheiten geladen · Stand ${lastAny ? dateDE(lastAny.date) : "–"}</p>`;
+  app.querySelectorAll("[data-loc]").forEach(b => b.onclick = () => { state.location = b.dataset.loc; showStart(); });
+  app.querySelectorAll("[data-split]").forEach(b => b.onclick = () => { state.split = b.dataset.split; showOverview(); });
+  document.getElementById("logout").onclick = () => pca.logoutRedirect({ account: account(), postLogoutRedirectUri: REDIRECT_URI });
+}
+function refreshStart() { if (!state.split) showStart(); }
 
-  $("btnWrite").onclick = async () => {
-    try {
-      const body = JSON.stringify({ geschrieben: new Date().toISOString(), geraet: navigator.userAgent, modus: $("mode").textContent }, null, 2);
-      const res = await fetch(GRAPH, { method: "PUT", headers: { Authorization: "Bearer " + await token(), "Content-Type": "application/json" }, body });
-      if (!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 200));
-      const item = await res.json();
-      log("Gespeichert in OneDrive: " + (item.parentReference && item.parentReference.path ? item.parentReference.path.replace(/^\/drive\/root:/, "") + "/" : "") + item.name, "ok");
-    } catch (e) { log("Schreiben fehlgeschlagen: " + e.message, "bad"); }
-  };
+function exBlock(exId, tpl, item) {
+  const ex = EX()[exId];
+  const last = lastFor(exId, state.location, tpl, item);
+  if (!last) return `<div><span class="exname">${esc(ex.name)}</span><div class="muted">Noch keine Werte</div></div>`;
+  const sg = suggest(exId, last.sets);
+  const where = last.session.location !== state.location ? " · " + esc(LOC(last.session.location)) : "";
+  const g = grips(last.sets);
+  return `<div>
+    <span class="exname">${esc(ex.name)}</span>${ex.role === "grund" ? "" : `<span class="tag">Wechsel</span>`}
+    <div class="row"><span>${dateDE(last.session.date).slice(0, 6)}${where}</span><span>${last.sets.map(s => esc(fmtSet(s, ex))).join(" · ")}</span></div>
+    ${g ? `<div class="row"><span>Griff</span><span>${esc(g)}</span></div>` : ""}
+    <div class="row"><span>Heute</span><span class="today">${esc(sg.text)}</span></div>
+    ${sg.hint ? `<div class="hint">${esc(sg.hint)}</div>` : ""}
+  </div>`;
+}
 
-  $("btnRead").onclick = async () => {
-    try {
-      const res = await fetch(GRAPH, { headers: { Authorization: "Bearer " + await token() } });
-      if (res.status === 404) { log("Noch keine Testdatei vorhanden. Erst schreiben.", "bad"); return; }
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      log("Gelesen: geschrieben am " + fmt(data.geschrieben) + " (" + data.modus + ")", "ok");
-    } catch (e) { log("Lesen fehlgeschlagen: " + e.message, "bad"); }
-  };
+function showOverview() {
+  const back = `<button class="link" id="back">‹ Zurück</button>`;
+  if (state.split === "core") {
+    const last = sessionsDesc().find(s => s.split === "core");
+    app.innerHTML = `${back}<h1>Core-Workout</h1><p class="sub">${last ? "Zuletzt am " + dateDE(last.date) : ""}</p>
+      <div class="card"><p class="muted">Das Abhaken kommt mit dem nächsten Teil.</p></div>`;
+    document.getElementById("back").onclick = () => { state.split = null; showStart(); };
+    return;
+  }
+  const tpl = lastSessionOf(state.split, state.location);
+  if (!tpl) { app.innerHTML = `${back}<p class="muted">Für dieses Training gibt es noch keine Einheit.</p>`; document.getElementById("back").onclick = () => { state.split = null; showStart(); }; return; }
+  const other = tpl.location !== state.location;
+  const st = data.stretches && tpl.stretches.length ? tpl.stretches : (lastSessionOf(state.split, state.location) || {}).stretches || [];
+  const SN = Object.fromEntries((data.stretches || []).map(s => [s.id, s.name]));
+  app.innerHTML = `${back}
+    <h1>${esc(SPLIT(state.split))}</h1>
+    <p class="sub">${esc(LOC(state.location))} · Vorlage: ${weekday(tpl.date)}, ${dateDE(tpl.date)}${other ? " (" + esc(LOC(tpl.location)) + ")" : ""}</p>
+    ${tpl.warmup.length ? `<div class="card"><h2>Aufwärmen</h2>${tpl.warmup.map(w => esc(w.minutes + " min " + w.name)).join(", ")}</div>` : ""}
+    <div class="card"><h2>Übungen</h2>
+      ${tpl.items.map(it => `<div class="ex">${it.exercises.length > 1
+        ? `<div class="ss"><div class="sslabel">Supersatz</div>${it.exercises.map(x => exBlock(x, tpl, it)).join('<div style="height:8px"></div>')}</div>`
+        : exBlock(it.exercises[0], tpl, it)}</div>`).join("")}
+    </div>
+    ${st.length ? `<div class="card"><h2>Dehnen <span class="muted" style="font-weight:400">20-s-Intervalle</span></h2><ul class="plain">${st.map(s => `<li>${esc(SN[s.id] || s.id)}${s.side ? " " + esc(s.side) : ""}</li>`).join("")}</ul></div>` : ""}
+    <p class="muted">Eintragen der Sätze folgt im nächsten Teil.</p>`;
+  document.getElementById("back").onclick = () => { state.split = null; showStart(); };
+  window.scrollTo(0, 0);
+}
 
-  $("btnLogout").onclick = async () => {
-    const acc = account();
-    try { await pca.logoutRedirect({ account: acc, postLogoutRedirectUri: REDIRECT_URI }); }
-    catch (e) { log("Abmelden fehlgeschlagen: " + e.message, "bad"); }
-  };
-
-  init();
+init();
 </script>
 </body>
 </html>
