@@ -9,40 +9,67 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Fitnesstool</title>
 <style>
-  :root { color-scheme: light dark; --bg:#f6f6f4; --card:#fff; --ink:#1d1d1b; --quiet:#6b6b66; --line:#dcdcd6; --accent:#2f6fd6; --accent-soft:#e6eefb; --ok:#2e7d32; --bad:#c62828; --warn:#a15c00; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#20201e; --ink:#ececea; --quiet:#a3a39d; --line:#3a3a37; --accent:#6ea0f0; --accent-soft:#1f2c42; --ok:#7bc47f; --bad:#ef7a7a; --warn:#e0a458; } }
-  * { box-sizing: border-box; }
-  body { margin:0; padding: calc(12px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom)); background:var(--bg); color:var(--ink);
-         font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  :root { color-scheme: light dark; --bg:#f4f4f1; --card:#fff; --ink:#1d1d1b; --quiet:#77776f; --faint:#b4b4ac; --line:#dcdcd6; --field:#f1f1ec;
+          --accent:#2f6fd6; --accent-soft:#e8effb; --ok:#2e7d32; --bad:#c62828; --warn:#9a5800; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --quiet:#a3a39d; --faint:#5e5e59; --line:#383835; --field:#2a2a27;
+          --accent:#6ea0f0; --accent-soft:#1d2a40; --ok:#7bc47f; --bad:#ef7a7a; --warn:#e0a458; } }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; padding: calc(10px + env(safe-area-inset-top)) 12px calc(32px + env(safe-area-inset-bottom)); background:var(--bg); color:var(--ink);
+         font: 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
   main { max-width: 560px; margin: 0 auto; }
-  h1 { font-size: 24px; margin: 6px 0 4px; }
-  h2 { font-size: 17px; margin: 0 0 8px; }
+  h1 { font-size: 26px; margin: 4px 0 2px; }
+  h2 { font-size: 15px; margin: 0 0 8px; color: var(--quiet); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .sub { color: var(--quiet); margin: 0 0 14px; font-size: 14px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-  button { font: inherit; font-weight: 600; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 13px 14px; width: 100%; margin: 6px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  button { font: inherit; font-weight: 600; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; padding: 14px; width: 100%; margin: 6px 0; }
   button.secondary { background: transparent; color: var(--accent); }
-  button.link { background: none; border: none; color: var(--accent); width: auto; padding: 6px 0; font-weight: 500; }
+  button.link { background: none; border: none; color: var(--accent); width: auto; padding: 6px 0; margin: 0; font-weight: 500; }
+  button.small { width: auto; padding: 7px 12px; font-size: 14px; margin: 8px 0 0; background: transparent; color: var(--accent); }
   .choices { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .choices.two { grid-template-columns: 1fr 1fr; }
   .choice { background: var(--card); color: var(--ink); border: 1px solid var(--line); text-align: left; margin: 0; }
   .choice small { display: block; color: var(--quiet); font-weight: 400; font-size: 13px; margin-top: 2px; }
   .choice.on { border: 2px solid var(--accent); background: var(--accent-soft); }
   .label { font-size: 13px; color: var(--quiet); text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 6px; }
-  .ex { border-top: 1px solid var(--line); padding: 10px 0 2px; }
-  .ex:first-of-type { border-top: none; padding-top: 0; }
-  .exname { font-weight: 600; }
-  .tag { display: inline-block; font-size: 12px; color: var(--quiet); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-weight: 500; vertical-align: 1px; }
-  .row { display: grid; grid-template-columns: 74px 1fr; gap: 8px; font-size: 15px; margin-top: 4px; }
-  .row span:first-child { color: var(--quiet); }
-  .today { color: var(--accent); font-weight: 600; }
-  .hint { font-size: 13px; color: var(--warn); margin-top: 3px; }
-  .ss { border-left: 3px solid var(--accent); padding-left: 10px; margin-left: 2px; }
-  .sslabel { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 2px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .muted { color: var(--quiet); font-size: 14px; }
-  .bar { display: flex; justify-content: space-between; align-items: center; }
   .err { color: var(--bad); font-size: 14px; white-space: pre-wrap; }
-  ul.plain { margin: 4px 0 0; padding-left: 18px; }
-  ul.plain li { margin: 2px 0; }
+
+  /* Übungsblöcke */
+  .blockhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .num { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--card); font-size: 14px; font-weight: 700; display: grid; place-items: center; flex: none; }
+  .kind { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--quiet); }
+  .card.superset { border: 2px solid var(--accent); }
+  .card.superset .kind { color: var(--accent); }
+  .exhead { margin: 2px 0 6px; }
+  .exhead .name { font-size: 19px; font-weight: 700; }
+  .exhead .letter { color: var(--accent); font-weight: 800; margin-right: 4px; }
+  .goal { font-size: 13px; color: var(--quiet); margin-top: 1px; }
+  .goal.up { color: var(--warn); font-weight: 600; }
+  .exsep { height: 1px; background: var(--line); margin: 12px 0; }
+
+  table.sets { width: 100%; border-collapse: collapse; }
+  table.sets th { font-size: 11.5px; color: var(--quiet); font-weight: 600; text-align: left; padding: 0 4px 4px; text-transform: uppercase; letter-spacing: .03em; }
+  table.sets td { padding: 3px 4px; vertical-align: middle; }
+  table.sets td.n { color: var(--quiet); font-size: 14px; width: 28px; padding-left: 0; }
+  input.f { font: inherit; font-size: 20px; font-weight: 700; width: 100%; min-width: 0; border: 1px solid transparent; background: var(--field); color: var(--ink);
+            border-radius: 10px; padding: 8px 6px; text-align: center; -webkit-appearance: none; appearance: none; }
+  input.f::placeholder { color: var(--faint); font-weight: 600; }
+  input.f:focus { outline: none; border-color: var(--accent); background: var(--card); }
+  input.f.done { background: var(--accent-soft); }
+  .unit { font-size: 12px; color: var(--quiet); }
+  .droprow td { padding-top: 0; }
+  .drop { font-size: 13px; color: var(--quiet); display: flex; gap: 6px; align-items: center; }
+  .drop input.f { font-size: 16px; padding: 5px 4px; width: 64px; }
+  .tiny { font-size: 12.5px; border: none; background: none; color: var(--accent); padding: 2px 0; margin: 0; width: auto; font-weight: 600; }
+  select.grip { font: inherit; font-size: 12px; color: var(--quiet); background: none; border: none; padding: 0; margin-top: 2px; max-width: 100%; }
+
+  .check { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 16px; }
+  .check:first-of-type { border-top: none; }
+  .check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .status { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 4px 0 6px; font-size: 13px; color: var(--quiet); text-align: right; }
+  .status.ok { color: var(--ok); } .status.bad { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -56,22 +83,25 @@ const CLIENT_ID = "b1012295-4bf2-495f-91dd-3fd1a26d470a";
 const REDIRECT_URI = "https://deniz1313.github.io/fitnesstool/";
 const SCOPES = ["Files.ReadWrite.AppFolder"];
 const DATA_FILE = "fitnesstool-daten.json";
-const DATA_URL = "https://graph.microsoft.com/v1.0/me/drive/special/approot:/" + DATA_FILE + ":/content";
-const CACHE_KEY = "ft_daten_cache";
+const GRAPH_ROOT = "https://graph.microsoft.com/v1.0/me/drive/special/approot";
+const fileUrl = name => GRAPH_ROOT + ":/" + encodeURI(name) + ":/content";
+const CACHE_KEY = "ft_daten_cache", DRAFT_KEY = "ft_entwurf", PENDING_KEY = "ft_ausstehend";
 
 const app = document.getElementById("app");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kg = n => (Math.round(n * 100) / 100).toLocaleString("de-DE");
 const dateDE = iso => { const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; };
 const weekday = iso => ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(iso + "T12:00:00").getDay()];
+const todayISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+const parseNum = v => { if (v == null) return null; const t = String(v).trim().replace(",", "."); if (t === "") return null; const n = Number(t); return isFinite(n) ? n : null; };
 function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function drop(k) { try { localStorage.removeItem(k); } catch (e) {} }
 
-let pca = null, data = null, state = { split: null, location: null };
+let pca = null, data = null, state = { split: null, location: null }, draft = null;
 
-// ------------------------------------------------------------ Anmeldung und Laden
+// ------------------------------------------------------------ Anmeldung und OneDrive
 function account() { return pca.getActiveAccount() || pca.getAllAccounts()[0] || null; }
-
 async function token() {
   const acc = account();
   try { return (await pca.acquireTokenSilent({ scopes: SCOPES, account: acc })).accessToken; }
@@ -80,14 +110,20 @@ async function token() {
     throw e;
   }
 }
-
-async function loadData() {
-  const res = await fetch(DATA_URL, { headers: { Authorization: "Bearer " + await token() }, cache: "no-store" });
+async function getJSON(name) {
+  const res = await fetch(fileUrl(name), { headers: { Authorization: "Bearer " + await token() }, cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("OneDrive antwortet mit " + res.status);
-  const d = await res.json();
-  store(CACHE_KEY, JSON.stringify(d));
-  return d;
+  return res.json();
+}
+async function putJSON(name, obj) {
+  const body = JSON.stringify(obj, null, 1);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(fileUrl(name), { method: "PUT", headers: { Authorization: "Bearer " + await token(), "Content-Type": "application/json" }, body });
+    if (res.ok) return true;
+    if (attempt < 2) await new Promise(r => setTimeout(r, 1200 * (attempt + 1)));
+    else throw new Error("Speichern fehlgeschlagen (" + res.status + ")");
+  }
 }
 
 async function init() {
@@ -96,156 +132,195 @@ async function init() {
     auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/consumers", redirectUri: REDIRECT_URI },
     cache: { cacheLocation: "localStorage" }
   });
-  try {
-    await pca.initialize();
-    const r = await pca.handleRedirectPromise();
-    if (r && r.account) pca.setActiveAccount(r.account);
-  } catch (e) { return showLogin("Anmeldung fehlgeschlagen: " + (e.errorCode || e.message)); }
+  try { await pca.initialize(); const r = await pca.handleRedirectPromise(); if (r && r.account) pca.setActiveAccount(r.account); }
+  catch (e) { return showLogin("Anmeldung fehlgeschlagen: " + (e.errorCode || e.message)); }
   if (!account()) return showLogin();
   pca.setActiveAccount(account());
   const cached = load(CACHE_KEY);
-  if (cached) { data = JSON.parse(cached); showStart(); }
+  const d = load(DRAFT_KEY); if (d) draft = JSON.parse(d);
+  if (cached) { data = JSON.parse(cached); route(); }
   try {
-    const fresh = await loadData();
+    const fresh = await getJSON(DATA_FILE);
     if (!fresh) return showMissing();
-    data = fresh; if (!cached) showStart(); else refreshStart();
-  } catch (e) {
-    if (!cached) showError("Daten konnten nicht geladen werden: " + e.message);
-  }
+    data = fresh; store(CACHE_KEY, JSON.stringify(data));
+    if (!cached) route();
+    flushPending();
+  } catch (e) { if (!cached) showError("Daten konnten nicht geladen werden: " + e.message); }
 }
+function route() { if (draft) { state.split = draft.split; state.location = draft.location; showWorkout(); } else showStart(); }
 
 function showLogin(msg) {
   app.innerHTML = `<h1>Fitnesstool</h1><p class="sub">Melde dich mit deinem Microsoft-Konto an. Deine Trainingsdaten liegen in deinem OneDrive.</p>
-    ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
-    <button id="login">Anmelden</button>`;
+    ${msg ? `<p class="err">${esc(msg)}</p>` : ""}<button id="login">Anmelden</button>`;
   document.getElementById("login").onclick = () => pca.loginRedirect({ scopes: SCOPES, prompt: "select_account" });
 }
-
 function showMissing() {
-  app.innerHTML = `<h1>Fitnesstool</h1><div class="card"><h2>Trainingsdaten fehlen</h2>
-    <p class="muted">In deinem OneDrive liegt unter <b>Apps → Fitnesstool</b> noch keine Datei <b>${DATA_FILE}</b>. Lege sie dort ab und lade die Seite neu.</p>
+  app.innerHTML = `<h1>Fitnesstool</h1><div class="card"><p class="muted">In deinem OneDrive liegt unter <b>Apps → Fitnesstool</b> noch keine Datei <b>${DATA_FILE}</b>. Lege sie dort ab und lade die Seite neu.</p>
     <button onclick="location.reload()">Neu laden</button></div>`;
 }
-
-function showError(msg) {
-  app.innerHTML = `<h1>Fitnesstool</h1><p class="err">${esc(msg)}</p><button onclick="location.reload()">Neu laden</button>`;
-}
+function showError(msg) { app.innerHTML = `<h1>Fitnesstool</h1><p class="err">${esc(msg)}</p><button onclick="location.reload()">Neu laden</button>`; }
 
 // ------------------------------------------------------------ Auswertung
-const EX = () => Object.fromEntries(data.exercises.map(e => [e.id, e]));
+const EXMAP = () => Object.fromEntries(data.exercises.map(e => [e.id, e]));
 const SPLIT = id => (data.splits.find(s => s.id === id) || {}).name || id;
 const LOC = id => (data.locations.find(l => l.id === id) || {}).name || id;
-const sessionsDesc = () => [...data.sessions].sort((a, b) => b.date.localeCompare(a.date));
+const sessionsDesc = () => [...data.sessions].filter(s => !s.inProgress).sort((a, b) => b.date.localeCompare(a.date));
 
 function lastSessionOf(split, location) {
   const all = sessionsDesc().filter(s => s.split === split && s.items.length);
   return all.find(s => s.location === location) || all[0] || null;
 }
-
-// alle Arbeitssätze einer Übung in einer Einheit, in Reihenfolge
-function setsIn(session, exId) {
-  const out = [];
-  for (const it of session.items) {
-    const j = it.exercises.indexOf(exId);
-    if (j < 0) continue;
-    for (const r of it.sets) if (r[j] && !r[j].warmup) out.push(r[j]);
-  }
-  return out;
-}
-
-// Werte vom letzten Mal für einen Übungsblock: gleicher Block (gleiche Übungen, gleiche Stelle) bevorzugt, gleicher Ort bevorzugt
 function itemKey(it) { return it.exercises.join("+"); }
-function occurrence(session, item) {
-  const k = itemKey(item); let n = 0;
-  for (const it of session.items) { if (it === item) return n; if (itemKey(it) === k) n++; }
-  return 0;
-}
-function itemSets(it, exId) { const j = it.exercises.indexOf(exId); return it.sets.map(r => r[j]).filter(e => e && !e.warmup); }
+function occurrence(session, item) { const k = itemKey(item); let n = 0; for (const it of session.items) { if (it === item) return n; if (itemKey(it) === k) n++; } return 0; }
+function itemSets(it, exId, withWarmup) { const j = it.exercises.indexOf(exId); return it.sets.map(r => r[j]).filter(e => e && (withWarmup || !e.warmup)); }
 function lastFor(exId, location, tplSession, tplItem) {
   const key = itemKey(tplItem), occ = occurrence(tplSession, tplItem);
   const ordered = sessionsDesc().filter(s => s.location === location).concat(sessionsDesc().filter(s => s.location !== location));
   for (const s of ordered) {
     const same = s.items.filter(it => itemKey(it) === key);
-    if (same.length) { const it = same[Math.min(occ, same.length - 1)]; const sets = itemSets(it, exId); if (sets.length) return { session: s, sets }; }
+    if (same.length) { const it = same[Math.min(occ, same.length - 1)]; if (itemSets(it, exId).length) return { session: s, item: it }; }
   }
-  for (const s of ordered) {
-    const it = s.items.find(x => x.exercises.includes(exId));
-    if (it) { const sets = itemSets(it, exId); if (sets.length) return { session: s, sets }; }
-  }
+  for (const s of ordered) { const it = s.items.find(x => x.exercises.includes(exId)); if (it && itemSets(it, exId).length) return { session: s, item: it }; }
   return null;
 }
-
-function fmtSet(e, ex) {
-  let t = "";
-  if (e.seconds != null) t = e.seconds + " s";
-  else t = String(e.reps);
-  if (e.weight != null) t += " × " + kg(e.weight) + " kg";
-  if (e.added) t += " (+" + kg(e.added) + " kg)";
-  if (e.perSide) t += "/Seite";
-  if (e.assisted) t += " +" + e.assisted + " mit Hilfe";
-  if (e.drop) t += " ↓ " + e.drop.reps + (e.drop.weight ? " × " + kg(e.drop.weight) + " kg" : e.drop.ex ? " " + (EX()[e.drop.ex] || {}).name : " ohne");
-  return t;
-}
-
 function nextHeavier(exId, w) {
   let best = null;
-  for (const s of data.sessions) for (const it of s.items) {
-    const j = it.exercises.indexOf(exId);
-    if (j < 0) continue;
-    for (const r of it.sets) { const x = r[j] && r[j].weight; if (x > w && (best == null || x < best)) best = x; }
-  }
+  for (const s of data.sessions) for (const it of s.items) { const j = it.exercises.indexOf(exId); if (j < 0) continue;
+    for (const r of it.sets) { const x = r[j] && r[j].weight; if (x > w && (best == null || x < best)) best = x; } }
   return best;
 }
-
-// Vorschlag für heute nach den vereinbarten Regeln
-function suggest(exId, sets) {
-  const ex = EX()[exId];
-  if (!sets.length) return { text: "–" };
+// Ziel für heute: kurzer Satz + vorbelegtes Gewicht
+function goal(exId, sets) {
+  const ex = EXMAP()[exId];
+  if (!sets.length) return { text: "Erstes Mal – trag ein, was du schaffst" };
   if (ex.measure === "time") {
-    const top = Math.max(...sets.map(s => s.seconds || 0));
-    if (sets.every(s => (s.seconds || 0) >= 60)) return { text: sets.map(s => s.seconds + " s").join(" · "), hint: "60 s erreicht – schwerere Variante versuchen" };
-    return { text: sets.map(s => Math.min(60, (s.seconds || 0) + 5) + " s").join(" · ") };
-  }
-  if (ex.measure === "weight" && !sets.some(s => s.weight)) {
-    if (sets.every(s => s.reps >= 12)) return { text: sets.map(() => "8").join(" · ") + " × höheres Gewicht", hint: "Alle Sätze bei 12 – Gewicht erhöhen (letztes Mal kein Gewicht notiert)" };
-    return { text: sets.map(s => Math.min(12, s.reps + 1)).join(" · "), hint: "Letztes Mal kein Gewicht notiert" };
+    if (sets.every(s => (s.seconds || 0) >= 60)) return { text: "60 s erreicht – schwerere Variante versuchen", up: true };
+    return { text: "Ziel: je 5 Sekunden länger" };
   }
   if (ex.measure === "weight") {
     const w = Math.max(...sets.map(s => s.weight || 0));
+    if (!w) return sets.every(s => s.reps >= 12) ? { text: "Alle Sätze bei 12 – Gewicht erhöhen", up: true } : { text: "Ziel: je 1 Wiederholung mehr" };
     const work = sets.filter(s => (s.weight || 0) === w);
-    const ps = work.some(s => s.perSide) ? "/Seite" : "";
     if (work.every(s => s.reps >= 12)) {
-      if (ex.equipment === "maschine") return { text: work.map(() => "8").join(" · ") + " × nächste Stufe", hint: "Alle Sätze bei 12 – nächste Stufe über " + kg(w) + " kg" };
+      if (ex.equipment === "maschine") return { text: "Gewicht erhöhen: nächste Stufe über " + kg(w) + " kg, Ziel 8 Wdh.", up: true, weight: w };
       const nw = nextHeavier(exId, w) || w + 2.5;
-      return { text: work.map(() => "8").join(" · ") + " × " + kg(nw) + " kg" + ps, hint: "Alle Sätze bei 12 – Gewicht erhöhen" };
+      return { text: "Gewicht erhöhen auf " + kg(nw) + " kg, Ziel 8 Wdh.", up: true, weight: nw };
     }
-    return { text: work.map(s => Math.min(12, s.reps + 1)).join(" · ") + " × " + kg(w) + " kg" + ps };
+    return { text: "Ziel: je 1 Wiederholung mehr, bis 12", weight: w };
   }
-  // Wiederholungen, mit oder ohne Zusatzgewicht
   const weighted = sets.filter(s => s.added), plain = sets.filter(s => !s.added);
-  const parts = [], hints = [];
+  const [lo, hi] = ["klimmzuege", "dips", "liegestuetze", "australian-pullups"].includes(exId) ? [5, 8] : [8, 12];
   if (weighted.length) {
     const a = Math.max(...weighted.map(s => s.added));
-    const ws = weighted.filter(s => s.added === a);
-    const [lo, hi] = ["klimmzuege", "dips", "liegestuetze", "australian-pullups"].includes(exId) ? [5, 8] : [8, 12];
-    if (ws.every(s => s.reps >= hi)) { parts.push(ws.map(() => String(lo)).join(" · ") + " (+" + kg(a + 2.5) + " kg)"); hints.push("Mit Zusatzgewicht alle Sätze bei " + hi + " – 2,5 kg mehr"); }
-    else parts.push(ws.map(s => Math.min(hi, s.reps + 1)).join(" · ") + " (+" + kg(a) + " kg)");
+    if (weighted.filter(s => s.added === a).every(s => s.reps >= hi)) return { text: "Zusatzgewicht erhöhen auf +" + kg(a + 2.5) + " kg, Ziel " + lo + " Wdh.", up: true, added: a + 2.5 };
+    return { text: "Ziel: je 1 Wiederholung mehr, bis " + hi, added: a };
   }
-  if (plain.length) {
-    if (plain.every(s => s.reps >= 12)) { parts.push(plain.map(() => "12").join(" · ")); if (!weighted.length) hints.push("Alle Sätze bei 12 – Zusatzgewicht oder schwerere Variante"); }
-    else parts.push(plain.map(s => Math.min(12, s.reps + 1)).join(" · "));
-  }
-  return { text: parts.join("  ·  dann "), hint: hints.join(" · ") || null };
+  if (plain.every(s => s.reps >= 12)) return { text: "Alle Sätze bei 12 – Zusatzgewicht oder schwerere Variante", up: true };
+  return { text: "Ziel: je 1 Wiederholung mehr, bis 12" };
 }
 
-function grips(sets) {
-  const g = [...new Set(sets.map(s => s.grip).filter(Boolean))];
-  return g.length ? g.join(", ") : null;
+// ------------------------------------------------------------ Entwurf (wird bei jeder Eingabe auf dem iPhone gesichert)
+function newDraft(split, location) {
+  const tpl = lastSessionOf(split, location);
+  const d = { id: null, date: todayISO(), location, split, startedAt: new Date().toISOString(), templateId: tpl ? tpl.id : null,
+              warmup: tpl ? tpl.warmup.map(w => ({ ...w, done: false })) : (split === "core" || location === "homegym" ? [] : [{ name: "Stepper", minutes: 5, done: false }]),
+              items: [], stretches: [], bodyweight: null, coreDone: false };
+  if (tpl) {
+    d.items = tpl.items.map(it => {
+      const lasts = it.exercises.map(ex => lastFor(ex, location, tpl, it));
+      const n = Math.max(1, ...lasts.map(l => l ? itemSets(l.item, it.exercises[lasts.indexOf(l)]).length : 0));
+      const goals = it.exercises.map((ex, j) => goal(ex, lasts[j] ? itemSets(lasts[j].item, ex) : []));
+      return { exercises: [...it.exercises], ref: lasts.map(l => l ? { sid: l.session.id, idx: l.session.items.indexOf(l.item) } : null),
+               goals, sets: Array.from({ length: n }, (_, k) => it.exercises.map((ex, j) => prefill(ex, lasts[j], k, goals[j]))) };
+    });
+  }
+  d.stretches = stretchList(split).map(s => ({ ...s, done: false }));
+  return d;
+}
+function refSets(item, j) { const r = item.ref[j]; if (!r) return []; const s = data.sessions.find(x => x.id === r.sid); if (!s) return []; const it = s.items[r.idx]; return it ? itemSets(it, item.exercises[j]) : []; }
+function prefill(exId, last, k, g) {
+  const ex = EXMAP()[exId];
+  const prev = last ? itemSets(last.item, exId)[k] : null;
+  const e = { reps: null, seconds: null };
+  if (ex.measure === "weight") e.weight = g && g.weight != null ? g.weight : prev && prev.weight != null ? prev.weight : null;
+  if (ex.measure === "reps") e.added = prev && prev.added ? (g && g.added != null && prev.added ? g.added : prev.added) : null;
+  if (prev && prev.grip) e.grip = prev.grip;
+  if (prev && prev.perSide) e.perSide = true;
+  if (prev && prev.drop) e.drop = { reps: null, weight: prev.drop.weight != null ? prev.drop.weight : null, ex: prev.drop.ex || null, added: prev.drop.added, open: true };
+  return e;
+}
+function stretchList(split) {
+  const count = new Map();
+  for (const s of data.sessions) if (s.split === split) for (const x of s.stretches || []) {
+    const k = x.id + "|" + (x.side || ""); count.set(k, (count.get(k) || 0) + 1);
+  }
+  const order = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  // Seiten zusammenhalten: links direkt nach rechts
+  const out = [], seen = new Set();
+  for (const k of order) { const [id] = k.split("|"); if (seen.has(id)) continue; seen.add(id);
+    const sides = order.filter(x => x.startsWith(id + "|"));
+    for (const side of ["rechts", "links", ""]) if (sides.includes(id + "|" + side)) out.push({ id, side: side || null }); }
+  return out;
+}
+let saveTimer = null;
+function saveDraft() {
+  store(DRAFT_KEY, JSON.stringify(draft));
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => syncDraft(false), 4000);
 }
 
-// ------------------------------------------------------------ Ansichten
+// ------------------------------------------------------------ Speichern in OneDrive
+function draftToSession(d, finished) {
+  const items = d.items.map(it => {
+    const sets = it.sets.map(row => row.map((e, j) => {
+      const ex = EXMAP()[it.exercises[j]]; const o = {};
+      if (ex.measure === "time") { if (e.seconds == null) return null; o.seconds = e.seconds; }
+      else { if (e.reps == null) return null; o.reps = e.reps; }
+      if (e.weight != null && ex.measure === "weight") o.weight = e.weight;
+      if (e.added) o.added = e.added;
+      if (e.perSide) o.perSide = true;
+      if (e.grip) o.grip = e.grip;
+      if (e.drop && e.drop.reps != null) { o.drop = { reps: e.drop.reps }; if (e.drop.weight != null) o.drop.weight = e.drop.weight; if (e.drop.ex) o.drop.ex = e.drop.ex; }
+      return o;
+    })).filter(row => row.some(Boolean)).map(row => row.map(e => e || {}));
+    return { exercises: it.exercises, sets };
+  }).filter(it => it.sets.length);
+  const s = { id: d.id || (d.date + "-" + d.location + "-" + d.split + "-" + d.startedAt.slice(11, 16).replace(":", "")),
+              date: d.date, location: d.location, split: d.split,
+              warmup: d.warmup.filter(w => w.done).map(({ name, minutes }) => ({ name, minutes })), cooldown: [],
+              items, stretches: d.stretches.filter(x => x.done).map(({ id, side }) => side ? { id, side } : { id }),
+              stretchDone: d.stretches.some(x => x.done), bodyweight: d.bodyweight, source: "fitnesstool" };
+  if (d.split === "core") s.core = !!d.coreDone;
+  if (!finished) s.inProgress = true;
+  return s;
+}
+let syncing = false;
+async function syncDraft(finished) {
+  if (!draft) return;
+  const session = draftToSession(draft, finished);
+  draft.id = session.id; store(DRAFT_KEY, JSON.stringify(draft));
+  store(PENDING_KEY, JSON.stringify(session));
+  if (syncing) return; syncing = true;
+  try { await pushSession(session); setStatus("In OneDrive gespeichert " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }), "ok"); }
+  catch (e) { setStatus("Noch nicht in OneDrive – wird erneut versucht (auf dem iPhone gesichert)", "bad"); if (finished) throw e; }
+  finally { syncing = false; }
+}
+async function pushSession(session) {
+  const fresh = await getJSON(DATA_FILE);
+  if (!fresh) throw new Error("Datendatei fehlt in OneDrive");
+  const day = todayISO(), bk = "ft_sicherung_" + day;
+  if (!load(bk)) { try { await putJSON("sicherung/fitnesstool-daten-" + day + ".json", fresh); store(bk, "1"); } catch (e) {} }
+  const i = fresh.sessions.findIndex(s => s.id === session.id);
+  if (i >= 0) fresh.sessions[i] = session; else fresh.sessions.push(session);
+  await putJSON(DATA_FILE, fresh);
+  data = fresh; store(CACHE_KEY, JSON.stringify(data));
+  const p = load(PENDING_KEY); if (p && JSON.parse(p).id === session.id && JSON.stringify(JSON.parse(p)) === JSON.stringify(session)) drop(PENDING_KEY);
+}
+async function flushPending() { const p = load(PENDING_KEY); if (!p) return; try { await pushSession(JSON.parse(p)); } catch (e) {} }
+function setStatus(t, cls) { const el = document.getElementById("status"); if (el) { el.textContent = t; el.className = "status " + (cls || ""); } }
+
+// ------------------------------------------------------------ Start
 function showStart() {
-  const splits = data.splits;
   const lastAny = sessionsDesc()[0];
   if (!state.location) state.location = lastAny ? lastAny.location : "fitx";
   app.innerHTML = `
@@ -254,60 +329,136 @@ function showStart() {
     <div class="label">Ort</div>
     <div class="choices two">${data.locations.map(l => `<button class="choice ${state.location === l.id ? "on" : ""}" data-loc="${l.id}">${esc(l.name)}</button>`).join("")}</div>
     <div class="label">Training</div>
-    <div class="choices" id="splits">${splits.map(s => {
-      const last = sessionsDesc().find(x => x.split === s.id);
-      return `<button class="choice" data-split="${s.id}">${esc(s.name)}<small>${last ? "Zuletzt " + weekday(last.date) + ", " + dateDE(last.date) + " · " + esc(LOC(last.location)) : "noch nicht trainiert"}</small></button>`;
-    }).join("")}</div>
-    <p class="muted" style="margin-top:18px">${data.sessions.length} Einheiten geladen · Stand ${lastAny ? dateDE(lastAny.date) : "–"}</p>`;
+    <div class="choices">${data.splits.map(s => { const last = sessionsDesc().find(x => x.split === s.id);
+      return `<button class="choice" data-split="${s.id}">${esc(s.name)}<small>${last ? "Zuletzt " + weekday(last.date) + ", " + dateDE(last.date) + " · " + esc(LOC(last.location)) : "noch nicht trainiert"}</small></button>`; }).join("")}</div>
+    <p class="muted" style="margin-top:18px">${sessionsDesc().length} Einheiten · zuletzt ${lastAny ? dateDE(lastAny.date) : "–"}</p>`;
   app.querySelectorAll("[data-loc]").forEach(b => b.onclick = () => { state.location = b.dataset.loc; showStart(); });
-  app.querySelectorAll("[data-split]").forEach(b => b.onclick = () => { state.split = b.dataset.split; showOverview(); });
+  app.querySelectorAll("[data-split]").forEach(b => b.onclick = () => { state.split = b.dataset.split; draft = newDraft(state.split, state.location); saveDraft(); showWorkout(); });
   document.getElementById("logout").onclick = () => pca.logoutRedirect({ account: account(), postLogoutRedirectUri: REDIRECT_URI });
 }
-function refreshStart() { if (!state.split) showStart(); }
 
-function exBlock(exId, tpl, item) {
-  const ex = EX()[exId];
-  const last = lastFor(exId, state.location, tpl, item);
-  if (!last) return `<div><span class="exname">${esc(ex.name)}</span><div class="muted">Noch keine Werte</div></div>`;
-  const sg = suggest(exId, last.sets);
-  const where = last.session.location !== state.location ? " · " + esc(LOC(last.session.location)) : "";
-  const g = grips(last.sets);
-  return `<div>
-    <span class="exname">${esc(ex.name)}</span>${ex.role === "grund" ? "" : `<span class="tag">Wechsel</span>`}
-    <div class="row"><span>${dateDE(last.session.date).slice(0, 6)}${where}</span><span>${last.sets.map(s => esc(fmtSet(s, ex))).join(" · ")}</span></div>
-    ${g ? `<div class="row"><span>Griff</span><span>${esc(g)}</span></div>` : ""}
-    <div class="row"><span>Heute</span><span class="today">${esc(sg.text)}</span></div>
-    ${sg.hint ? `<div class="hint">${esc(sg.hint)}</div>` : ""}
+// ------------------------------------------------------------ Training
+const GRIPS = ["breit Obergriff", "Obergriff", "breit Untergriff", "Untergriff", "eng Hammergriff", "Hammergriff", "eng", "breit"];
+function cellInputs(it, i, k, j) {
+  const exId = it.exercises[j], ex = EXMAP()[exId], e = it.sets[k][j];
+  const prev = refSets(it, j)[k];
+  const ph = prev ? (ex.measure === "time" ? (prev.seconds ?? "") : (prev.reps ?? "")) : "";
+  const main = ex.measure === "time"
+    ? `<input class="f ${e.seconds != null ? "done" : ""}" inputmode="numeric" data-k="${i}.${k}.${j}.seconds" placeholder="${esc(ph)}" value="${e.seconds ?? ""}">`
+    : `<input class="f ${e.reps != null ? "done" : ""}" inputmode="numeric" data-k="${i}.${k}.${j}.reps" placeholder="${esc(ph)}" value="${e.reps ?? ""}">`;
+  const load = ex.measure === "weight"
+    ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.weight" placeholder="kg" value="${e.weight != null ? kg(e.weight) : ""}">`
+    : ex.measure === "reps" ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.added" placeholder="–" value="${e.added ? kg(e.added) : ""}">` : "";
+  const gripSel = (exId === "klimmzuege" || /^rudern/.test(exId)) ? `<select class="grip" data-k="${i}.${k}.${j}.grip"><option value="">Griff</option>${GRIPS.map(g => `<option ${e.grip === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : "";
+  return { load, main, gripSel };
+}
+function blockHTML(it, i) {
+  const EX = EXMAP(), ss = it.exercises.length > 1, L = "ABC";
+  const heads = it.exercises.map((x, j) => `<div class="exhead"><div class="name">${ss ? `<span class="letter">${L[j]}</span>` : ""}${esc(EX[x].name)}</div>
+      <div class="goal ${it.goals[j] && it.goals[j].up ? "up" : ""}">${esc(it.goals[j] ? it.goals[j].text : "")}</div></div>`).join("");
+  const colHead = j => { const m = EX[it.exercises[j]].measure; return m === "weight" ? ["kg", "Wdh."] : m === "reps" ? ["+kg", "Wdh."] : ["", "Sek."]; };
+  let head = `<tr><th></th>${it.exercises.map((x, j) => { const [a, b] = colHead(j); return (a ? `<th>${ss ? L[j] + " " : ""}${a}</th>` : "") + `<th>${ss && !a ? L[j] + " " : ""}${b}</th>`; }).join("")}</tr>`;
+  const rows = it.sets.map((row, k) => {
+    const cells = it.exercises.map((x, j) => { const c = cellInputs(it, i, k, j); return (c.load ? `<td>${c.load}</td>` : "") + `<td>${c.main}${c.gripSel}</td>`; }).join("");
+    const drops = it.exercises.map((x, j) => {
+      const e = row[j];
+      if (e.drop && e.drop.open) {
+        const dx = e.drop.ex ? esc(EX[e.drop.ex].name) : "Drop";
+        return `<div class="drop">${ss ? L[j] + " " : ""}↓ ${dx} ${!e.drop.ex && EX[x].measure === "weight" ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.drop.weight" placeholder="kg" value="${e.drop.weight != null ? kg(e.drop.weight) : ""}">` : ""}<input class="f" inputmode="numeric" data-k="${i}.${k}.${j}.drop.reps" placeholder="${esc(((refSets(it, j)[k] || {}).drop || {}).reps ?? "Wdh.")}" value="${e.drop.reps ?? ""}"> Wdh.</div>`;
+      }
+      return EX[x].measure !== "time" ? `<button class="tiny" data-drop="${i}.${k}.${j}">+ Drop${ss ? " " + L[j] : ""}</button>` : "";
+    }).join(" ");
+    const span = it.exercises.reduce((n, x) => n + (EX[x].measure === "time" ? 1 : 2), 1);
+    return `<tr><td class="n">${k + 1}</td>${cells}</tr><tr class="droprow"><td></td><td colspan="${span - 1}">${drops}</td></tr>`;
+  }).join("");
+  return `<div class="card ${ss ? "superset" : ""}">
+    <div class="blockhead"><div class="num">${i + 1}</div><div class="kind">${ss ? "Supersatz · abwechselnd" : "Einzelübung"}</div></div>
+    ${heads.replace(/<\/div><\/div><div class="exhead">/g, '</div></div><div class="exhead">')}
+    <table class="sets">${head}${rows}</table>
+    <button class="small" data-addset="${i}">+ Satz</button>
   </div>`;
 }
-
-function showOverview() {
-  const back = `<button class="link" id="back">‹ Zurück</button>`;
-  if (state.split === "core") {
-    const last = sessionsDesc().find(s => s.split === "core");
-    app.innerHTML = `${back}<h1>Core-Workout</h1><p class="sub">${last ? "Zuletzt am " + dateDE(last.date) : ""}</p>
-      <div class="card"><p class="muted">Das Abhaken kommt mit dem nächsten Teil.</p></div>`;
-    document.getElementById("back").onclick = () => { state.split = null; showStart(); };
-    return;
+function showWorkout() {
+  const d = draft, SN = Object.fromEntries((data.stretches || []).map(s => [s.id, s.name]));
+  const tpl = d.templateId ? data.sessions.find(s => s.id === d.templateId) : null;
+  let body = "";
+  if (d.split === "core") {
+    body = `<div class="card"><label class="check"><input type="checkbox" data-core ${d.coreDone ? "checked" : ""}> Core-Workout erledigt</label></div>`;
+  } else {
+    body = `${d.warmup.length ? `<div class="card"><h2>Aufwärmen</h2>${d.warmup.map((w, n) => `<label class="check"><input type="checkbox" data-warm="${n}" ${w.done ? "checked" : ""}> ${esc(w.minutes + " min " + w.name)}</label>`).join("")}</div>` : ""}
+      ${d.items.map(blockHTML).join("")}
+      <button class="secondary" id="addex">+ Übung hinzufügen</button>
+      ${d.stretches.length ? `<div class="card" style="margin-top:12px"><h2>Dehnen · 20-s-Intervalle</h2>${d.stretches.map((s, n) => `<label class="check"><input type="checkbox" data-str="${n}" ${s.done ? "checked" : ""}> ${esc(SN[s.id] || s.id)}${s.side ? " " + esc(s.side) : ""}</label>`).join("")}</div>` : ""}`;
   }
-  const tpl = lastSessionOf(state.split, state.location);
-  if (!tpl) { app.innerHTML = `${back}<p class="muted">Für dieses Training gibt es noch keine Einheit.</p>`; document.getElementById("back").onclick = () => { state.split = null; showStart(); }; return; }
-  const other = tpl.location !== state.location;
-  const st = data.stretches && tpl.stretches.length ? tpl.stretches : (lastSessionOf(state.split, state.location) || {}).stretches || [];
-  const SN = Object.fromEntries((data.stretches || []).map(s => [s.id, s.name]));
-  app.innerHTML = `${back}
-    <h1>${esc(SPLIT(state.split))}</h1>
-    <p class="sub">${esc(LOC(state.location))} · Vorlage: ${weekday(tpl.date)}, ${dateDE(tpl.date)}${other ? " (" + esc(LOC(tpl.location)) + ")" : ""}</p>
-    ${tpl.warmup.length ? `<div class="card"><h2>Aufwärmen</h2>${tpl.warmup.map(w => esc(w.minutes + " min " + w.name)).join(", ")}</div>` : ""}
-    <div class="card"><h2>Übungen</h2>
-      ${tpl.items.map(it => `<div class="ex">${it.exercises.length > 1
-        ? `<div class="ss"><div class="sslabel">Supersatz</div>${it.exercises.map(x => exBlock(x, tpl, it)).join('<div style="height:8px"></div>')}</div>`
-        : exBlock(it.exercises[0], tpl, it)}</div>`).join("")}
-    </div>
-    ${st.length ? `<div class="card"><h2>Dehnen <span class="muted" style="font-weight:400">20-s-Intervalle</span></h2><ul class="plain">${st.map(s => `<li>${esc(SN[s.id] || s.id)}${s.side ? " " + esc(s.side) : ""}</li>`).join("")}</ul></div>` : ""}
-    <p class="muted">Eintragen der Sätze folgt im nächsten Teil.</p>`;
-  document.getElementById("back").onclick = () => { state.split = null; showStart(); };
+  app.innerHTML = `<div id="status" class="status">Auf dem iPhone gesichert</div>
+    <div class="bar"><button class="link" id="back">‹ Abbrechen</button></div>
+    <h1>${esc(SPLIT(d.split))}</h1>
+    <p class="sub">${esc(LOC(d.location))}${tpl ? " · Vorlage vom " + dateDE(tpl.date) : ""}</p>
+    ${body}
+    <div class="card"><div class="row2">
+      <label><div class="muted">Datum</div><input class="f" type="date" id="date" value="${d.date}" style="font-size:16px"></label>
+      <label><div class="muted">Körpergewicht (optional)</div><input class="f" inputmode="decimal" id="bw" placeholder="kg" value="${d.bodyweight != null ? kg(d.bodyweight) : ""}" style="font-size:16px"></label>
+    </div></div>
+    <button id="finish">Training beenden und speichern</button>`;
+  bindWorkout();
+}
+function setPath(path, raw) {
+  const [i, k, j, ...rest] = path.split(".");
+  const e = draft.items[+i].sets[+k][+j];
+  const key = rest.join(".");
+  const v = key === "grip" ? (raw || null) : parseNum(raw);
+  if (key.startsWith("drop.")) { e.drop = e.drop || { open: true }; e.drop[key.slice(5)] = v; }
+  else e[key] = v;
+}
+function bindWorkout() {
+  app.querySelectorAll("[data-k]").forEach(el => {
+    el.addEventListener("input", () => { setPath(el.dataset.k, el.value); if (el.classList.contains("f") && /\.(reps|seconds)$/.test(el.dataset.k)) el.classList.toggle("done", el.value.trim() !== ""); saveDraft(); });
+    el.addEventListener("change", () => { setPath(el.dataset.k, el.value); saveDraft(); });
+  });
+  app.querySelectorAll("[data-drop]").forEach(b => b.onclick = () => { const [i, k, j] = b.dataset.drop.split(".").map(Number); const e = draft.items[i].sets[k][j]; e.drop = { reps: null, weight: null, open: true }; saveDraft(); keepScroll(showWorkout); });
+  app.querySelectorAll("[data-addset]").forEach(b => b.onclick = () => { const it = draft.items[+b.dataset.addset]; const last = it.sets[it.sets.length - 1];
+    it.sets.push(last.map(e => ({ weight: e.weight ?? null, added: e.added ?? null, grip: e.grip ?? null, perSide: e.perSide, reps: null, seconds: null }))); saveDraft(); keepScroll(showWorkout); });
+  app.querySelectorAll("[data-warm]").forEach(c => c.onchange = () => { draft.warmup[+c.dataset.warm].done = c.checked; saveDraft(); });
+  app.querySelectorAll("[data-str]").forEach(c => c.onchange = () => { draft.stretches[+c.dataset.str].done = c.checked; saveDraft(); });
+  const core = app.querySelector("[data-core]"); if (core) core.onchange = () => { draft.coreDone = core.checked; saveDraft(); };
+  document.getElementById("date").onchange = e => { draft.date = e.target.value || todayISO(); saveDraft(); };
+  document.getElementById("bw").oninput = e => { draft.bodyweight = parseNum(e.target.value); saveDraft(); };
+  const add = document.getElementById("addex"); if (add) add.onclick = pickExercise;
+  document.getElementById("back").onclick = () => { if (confirm("Training abbrechen? Bereits Eingetragenes wird verworfen.")) { draft = null; drop(DRAFT_KEY); drop(PENDING_KEY); state.split = null; showStart(); } };
+  document.getElementById("finish").onclick = finish;
+}
+function keepScroll(fn) { const y = window.scrollY; fn(); window.scrollTo(0, y); }
+function pickExercise() {
+  const EX = data.exercises.filter(e => e.split === draft.split).concat(data.exercises.filter(e => e.split !== draft.split));
+  const y = window.scrollY;
+  app.innerHTML = `<button class="link" id="cancel">‹ Zurück zum Training</button><h1>Übung hinzufügen</h1>
+    <div class="choices">${EX.map(e => `<button class="choice" data-ex="${e.id}">${esc(e.name)}<small>${esc(SPLIT(e.split))}</small></button>`).join("")}</div>`;
+  document.getElementById("cancel").onclick = () => { showWorkout(); window.scrollTo(0, y); };
+  app.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => {
+    const ex = b.dataset.ex, item = { exercises: [ex] };
+    const l = lastFor(ex, draft.location, { items: [item] }, item);
+    const g = goal(ex, l ? itemSets(l.item, ex) : []);
+    const n = l ? itemSets(l.item, ex).length : 3;
+    draft.items.push({ exercises: [ex], ref: [l ? { sid: l.session.id, idx: l.session.items.indexOf(l.item) } : null], goals: [g],
+      sets: Array.from({ length: n }, (_, k) => [prefill(ex, l, k, g)]) });
+    saveDraft(); showWorkout(); window.scrollTo(0, document.body.scrollHeight);
+  });
   window.scrollTo(0, 0);
+}
+async function finish() {
+  const s = draftToSession(draft, true);
+  if (!s.items.length && !s.core && !s.stretches.length) { alert("Es ist noch nichts eingetragen."); return; }
+  const btn = document.getElementById("finish"); btn.disabled = true; btn.textContent = "Speichert …";
+  try {
+    clearTimeout(saveTimer);
+    await syncDraft(true);
+    draft = null; drop(DRAFT_KEY); state.split = null;
+    app.innerHTML = `<h1>Gespeichert</h1><div class="card"><p>${esc(SPLIT(s.split))} am ${dateDE(s.date)} ist in deinem OneDrive gespeichert.</p></div><button id="home">Zur Startseite</button>`;
+    document.getElementById("home").onclick = showStart;
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "Erneut versuchen";
+    setStatus("Speichern in OneDrive fehlgeschlagen. Dein Training bleibt auf dem iPhone gesichert.", "bad");
+  }
 }
 
 init();
