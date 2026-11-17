@@ -64,6 +64,16 @@
   .tiny { font-size: 12.5px; border: none; background: none; color: var(--accent); padding: 2px 0; margin: 0; width: auto; font-weight: 600; }
   select.grip { font: inherit; font-size: 12px; color: var(--quiet); background: none; border: none; padding: 0; margin-top: 2px; max-width: 100%; }
 
+  .tools { margin-left: auto; display: flex; gap: 4px; }
+  .iconbtn { width: 34px; height: 34px; padding: 0; margin: 0; border-radius: 9px; background: var(--field); color: var(--ink); border: none; font-size: 16px; font-weight: 700; }
+  .iconbtn:disabled { opacity: .3; }
+  .sslink { font-size: 12px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin: 6px 0 2px; }
+  th.grp { text-transform: none; color: var(--accent); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 1px; }
+  td.ok { width: 40px; padding-right: 0; }
+  .tick { width: 38px; height: 40px; padding: 0; margin: 0; border-radius: 10px; background: var(--field); color: var(--faint); border: 1px solid var(--line); font-size: 18px; }
+  .tick.on { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .tiny.quiet { color: var(--quiet); font-weight: 500; margin-left: 6px; }
+  .grow { flex: 1; }
   .check { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 16px; }
   .check:first-of-type { border-top: none; }
   .check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
@@ -137,7 +147,7 @@ async function init() {
   if (!account()) return showLogin();
   pca.setActiveAccount(account());
   const cached = load(CACHE_KEY);
-  const d = load(DRAFT_KEY); if (d) draft = JSON.parse(d);
+  const d = load(DRAFT_KEY); if (d) { draft = JSON.parse(d); if (draft.v !== 3) draft = null; }
   if (cached) { data = JSON.parse(cached); route(); }
   try {
     const fresh = await getJSON(DATA_FILE);
@@ -220,46 +230,74 @@ function goal(exId, sets) {
 }
 
 // ------------------------------------------------------------ Entwurf (wird bei jeder Eingabe auf dem iPhone gesichert)
-function newDraft(split, location) {
-  const tpl = lastSessionOf(split, location);
-  const d = { id: null, date: todayISO(), location, split, startedAt: new Date().toISOString(), templateId: tpl ? tpl.id : null,
-              warmup: tpl ? tpl.warmup.map(w => ({ ...w, done: false })) : (split === "core" || location === "homegym" ? [] : [{ name: "Stepper", minutes: 5, done: false }]),
-              items: [], stretches: [], bodyweight: null, coreDone: false };
-  if (tpl) {
-    d.items = tpl.items.map(it => {
-      const lasts = it.exercises.map(ex => lastFor(ex, location, tpl, it));
-      const n = Math.max(1, ...lasts.map(l => l ? itemSets(l.item, it.exercises[lasts.indexOf(l)]).length : 0));
-      const goals = it.exercises.map((ex, j) => goal(ex, lasts[j] ? itemSets(lasts[j].item, ex) : []));
-      return { exercises: [...it.exercises], ref: lasts.map(l => l ? { sid: l.session.id, idx: l.session.items.indexOf(l.item) } : null),
-               goals, sets: Array.from({ length: n }, (_, k) => it.exercises.map((ex, j) => prefill(ex, lasts[j], k, goals[j]))) };
-    });
-  }
-  d.stretches = stretchList(split).map(s => ({ ...s, done: false }));
-  return d;
-}
-function refSets(item, j) { const r = item.ref[j]; if (!r) return []; const s = data.sessions.find(x => x.id === r.sid); if (!s) return []; const it = s.items[r.idx]; return it ? itemSets(it, item.exercises[j]) : []; }
-function prefill(exId, last, k, g) {
+const DRAFT_VERSION = 3;
+const RANGE = exId => ["klimmzuege", "dips", "liegestuetze", "australian-pullups"].includes(exId) ? [5, 8] : [8, 12];
+
+// Zielwerte für einen Satz heute, aus dem Satz vom letzten Mal und dem Ziel der Übung
+function targetFor(exId, prev, g) {
   const ex = EXMAP()[exId];
-  const prev = last ? itemSets(last.item, exId)[k] : null;
   const e = { reps: null, seconds: null };
-  if (ex.measure === "weight") e.weight = g && g.weight != null ? g.weight : prev && prev.weight != null ? prev.weight : null;
-  if (ex.measure === "reps") e.added = prev && prev.added ? (g && g.added != null && prev.added ? g.added : prev.added) : null;
-  if (prev && prev.grip) e.grip = prev.grip;
-  if (prev && prev.perSide) e.perSide = true;
-  if (prev && prev.drop) e.drop = { reps: null, weight: prev.drop.weight != null ? prev.drop.weight : null, ex: prev.drop.ex || null, added: prev.drop.added, open: true };
+  if (!prev) {
+    if (ex.measure === "weight") e.weight = g && g.weight != null ? g.weight : null;
+    return e;
+  }
+  if (prev.grip) e.grip = prev.grip;
+  if (prev.perSide) e.perSide = true;
+  if (ex.measure === "time") e.seconds = (g && g.up) ? prev.seconds : Math.min(60, (prev.seconds || 0) + 5);
+  else if (ex.measure === "weight") {
+    if (g && g.up) { e.weight = g.weight != null ? g.weight : (prev.weight ?? null); e.reps = 8; }
+    else { e.weight = prev.weight != null ? prev.weight : null; e.reps = Math.min(12, prev.reps + 1); }
+    if (g && g.up && ex.equipment === "maschine") e.weightHint = "nächste Stufe";
+  } else {
+    const [lo, hi] = RANGE(exId);
+    if (prev.added) {
+      if (g && g.up && g.added != null) { e.added = g.added; e.reps = lo; }
+      else { e.added = prev.added; e.reps = Math.min(hi, prev.reps + 1); }
+    } else { e.added = null; e.reps = Math.min(12, prev.reps + 1); }
+  }
+  if (prev.drop) e.drop = { reps: prev.drop.reps ?? null, weight: prev.drop.weight != null ? prev.drop.weight : null, ex: prev.drop.ex || null, open: true };
   return e;
 }
+function makeItem(exercises, location, tplSession, tplItem) {
+  const tItem = tplItem || { exercises };
+  const tSess = tplSession || { items: [tItem] };
+  const lasts = exercises.map(ex => lastFor(ex, location, tSess, tItem));
+  const prevSets = exercises.map((ex, j) => lasts[j] ? itemSets(lasts[j].item, ex) : []);
+  const goals = exercises.map((ex, j) => goal(ex, prevSets[j]));
+  const n = Math.max(prevSets.some(p => p.length) ? 1 : 3, ...prevSets.map(p => p.length));
+  return { exercises: [...exercises], goals,
+           sets: Array.from({ length: n }, (_, k) => exercises.map((ex, j) => targetFor(ex, prevSets[j][k] || prevSets[j][prevSets[j].length - 1] || null, goals[j]))),
+           done: Array.from({ length: n }, () => false) };
+}
+function addExerciseToItem(it, exId, location) {
+  const l = lastFor(exId, location, { items: [{ exercises: [exId] }] }, { exercises: [exId] });
+  const prev = l ? itemSets(l.item, exId) : [];
+  const g = goal(exId, prev);
+  it.exercises.push(exId); it.goals.push(g);
+  it.sets.forEach((row, k) => row.push(targetFor(exId, prev[k] || prev[prev.length - 1] || null, g)));
+}
+function newDraft(split, location) {
+  const tpl = lastSessionOf(split, location);
+  const d = { v: DRAFT_VERSION, id: null, date: todayISO(), location, split, startedAt: new Date().toISOString(), templateId: tpl ? tpl.id : null,
+              warmup: tpl ? tpl.warmup.map(w => ({ ...w, done: false })) : (split === "core" || location === "homegym" ? [] : [{ name: "Stepper", minutes: 5, done: false }]),
+              items: tpl ? tpl.items.map(it => makeItem(it.exercises, location, tpl, it)) : [],
+              stretches: stretchList(split).map(s => ({ ...s, done: false })), bodyweight: null, coreDone: false };
+  return d;
+}
 function stretchList(split) {
+  // eigene Reihenfolge aus dem letzten Training dieses Typs, danach alle übrigen nach Häufigkeit
+  const last = sessionsDesc().find(s => s.split === split && s.stretchOrder && s.stretchOrder.length);
   const count = new Map();
   for (const s of data.sessions) if (s.split === split) for (const x of s.stretches || []) {
     const k = x.id + "|" + (x.side || ""); count.set(k, (count.get(k) || 0) + 1);
   }
   const order = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-  // Seiten zusammenhalten: links direkt nach rechts
   const out = [], seen = new Set();
-  for (const k of order) { const [id] = k.split("|"); if (seen.has(id)) continue; seen.add(id);
-    const sides = order.filter(x => x.startsWith(id + "|"));
-    for (const side of ["rechts", "links", ""]) if (sides.includes(id + "|" + side)) out.push({ id, side: side || null }); }
+  const push = (id, side) => { const k = id + "|" + (side || ""); if (!seen.has(k)) { seen.add(k); out.push({ id, side: side || null }); } };
+  if (last) for (const x of last.stretchOrder) push(x.id, x.side);
+  const ids = new Set();
+  for (const k of order) { const [id] = k.split("|"); if (ids.has(id)) continue; ids.add(id);
+    for (const side of ["rechts", "links", ""]) if (order.includes(id + "|" + side)) push(id, side); }
   return out;
 }
 let saveTimer = null;
@@ -272,7 +310,7 @@ function saveDraft() {
 // ------------------------------------------------------------ Speichern in OneDrive
 function draftToSession(d, finished) {
   const items = d.items.map(it => {
-    const sets = it.sets.map(row => row.map((e, j) => {
+    const sets = it.sets.filter((row, k) => it.done[k]).map(row => row.map((e, j) => {
       const ex = EXMAP()[it.exercises[j]]; const o = {};
       if (ex.measure === "time") { if (e.seconds == null) return null; o.seconds = e.seconds; }
       else { if (e.reps == null) return null; o.reps = e.reps; }
@@ -289,7 +327,8 @@ function draftToSession(d, finished) {
               date: d.date, location: d.location, split: d.split,
               warmup: d.warmup.filter(w => w.done).map(({ name, minutes }) => ({ name, minutes })), cooldown: [],
               items, stretches: d.stretches.filter(x => x.done).map(({ id, side }) => side ? { id, side } : { id }),
-              stretchDone: d.stretches.some(x => x.done), bodyweight: d.bodyweight, source: "fitnesstool" };
+              stretchDone: d.stretches.some(x => x.done), stretchOrder: d.stretches.map(({ id, side }) => side ? { id, side } : { id }),
+              bodyweight: d.bodyweight, source: "fitnesstool" };
   if (d.split === "core") s.core = !!d.coreDone;
   if (!finished) s.inProgress = true;
   return s;
@@ -339,42 +378,50 @@ function showStart() {
 
 // ------------------------------------------------------------ Training
 const GRIPS = ["breit Obergriff", "Obergriff", "breit Untergriff", "Untergriff", "eng Hammergriff", "Hammergriff", "eng", "breit"];
-function cellInputs(it, i, k, j) {
-  const exId = it.exercises[j], ex = EXMAP()[exId], e = it.sets[k][j];
-  const prev = refSets(it, j)[k];
-  const ph = prev ? (ex.measure === "time" ? (prev.seconds ?? "") : (prev.reps ?? "")) : "";
+const hasGrip = exId => exId === "klimmzuege" || /^rudern/.test(exId);
+
+function cellHTML(it, i, k, j) {
+  const exId = it.exercises[j], ex = EXMAP()[exId], e = it.sets[k][j], on = it.done[k] ? " done" : "";
   const main = ex.measure === "time"
-    ? `<input class="f ${e.seconds != null ? "done" : ""}" inputmode="numeric" data-k="${i}.${k}.${j}.seconds" placeholder="${esc(ph)}" value="${e.seconds ?? ""}">`
-    : `<input class="f ${e.reps != null ? "done" : ""}" inputmode="numeric" data-k="${i}.${k}.${j}.reps" placeholder="${esc(ph)}" value="${e.reps ?? ""}">`;
+    ? `<input class="f${on}" inputmode="numeric" data-k="${i}.${k}.${j}.seconds" placeholder="s" value="${e.seconds ?? ""}">`
+    : `<input class="f${on}" inputmode="numeric" data-k="${i}.${k}.${j}.reps" placeholder="Wdh." value="${e.reps ?? ""}">`;
   const load = ex.measure === "weight"
-    ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.weight" placeholder="kg" value="${e.weight != null ? kg(e.weight) : ""}">`
-    : ex.measure === "reps" ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.added" placeholder="–" value="${e.added ? kg(e.added) : ""}">` : "";
-  const gripSel = (exId === "klimmzuege" || /^rudern/.test(exId)) ? `<select class="grip" data-k="${i}.${k}.${j}.grip"><option value="">Griff</option>${GRIPS.map(g => `<option ${e.grip === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : "";
-  return { load, main, gripSel };
+    ? `<input class="f${on}" inputmode="decimal" data-k="${i}.${k}.${j}.weight" placeholder="kg" value="${e.weight != null ? kg(e.weight) : ""}">`
+    : ex.measure === "reps" ? `<input class="f${on}" inputmode="decimal" data-k="${i}.${k}.${j}.added" placeholder="+kg" value="${e.added ? kg(e.added) : ""}">` : "";
+  const grip = hasGrip(exId) ? `<select class="grip" data-k="${i}.${k}.${j}.grip"><option value="">Griff</option>${GRIPS.map(g => `<option ${e.grip === g ? "selected" : ""}>${g}</option>`).join("")}</select>` : "";
+  return (load ? `<td>${load}</td>` : "") + `<td>${main}${grip}</td>`;
 }
-function blockHTML(it, i) {
-  const EX = EXMAP(), ss = it.exercises.length > 1, L = "ABC";
-  const heads = it.exercises.map((x, j) => `<div class="exhead"><div class="name">${ss ? `<span class="letter">${L[j]}</span>` : ""}${esc(EX[x].name)}</div>
+function dropHTML(it, i, k, j) {
+  const EX = EXMAP(), x = it.exercises[j], e = it.sets[k][j], short = it.exercises.length > 1 ? " " + esc(shortName(x)) : "";
+  if (EX[x].measure === "time") return "";
+  if (e.drop && e.drop.open) {
+    const dx = e.drop.ex ? esc(EX[e.drop.ex].name) : "Drop" + short;
+    const w = !e.drop.ex && EX[x].measure === "weight" ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.drop.weight" placeholder="kg" value="${e.drop.weight != null ? kg(e.drop.weight) : ""}">` : "";
+    return `<div class="drop">↓ ${dx} ${w}<input class="f" inputmode="numeric" data-k="${i}.${k}.${j}.drop.reps" placeholder="Wdh." value="${e.drop.reps ?? ""}"><button class="tiny quiet" data-dropoff="${i}.${k}.${j}">✕</button></div>`;
+  }
+  return `<button class="tiny" data-drop="${i}.${k}.${j}">+ Drop${short}</button>`;
+}
+function shortName(id) { const n = EXMAP()[id].name; return n.replace(/ (Kurzhantel|Langhantel|auf Bank|an der Leiter|an den Ringen|stehend|hängend|SZ-Stange|Maschine frei)/g, "").trim(); }
+
+function blockHTML(it, i, total) {
+  const EX = EXMAP(), ss = it.exercises.length > 1;
+  const names = it.exercises.map((x, j) => `${j ? `<div class="sslink">Supersatz</div>` : ""}
+      <div class="exhead"><div class="name">${esc(EX[x].name)}${ss ? ` <button class="tiny quiet" data-rmex="${i}.${j}" title="Aus dem Supersatz nehmen">✕</button>` : ""}</div>
       <div class="goal ${it.goals[j] && it.goals[j].up ? "up" : ""}">${esc(it.goals[j] ? it.goals[j].text : "")}</div></div>`).join("");
-  const colHead = j => { const m = EX[it.exercises[j]].measure; return m === "weight" ? ["kg", "Wdh."] : m === "reps" ? ["+kg", "Wdh."] : ["", "Sek."]; };
-  let head = `<tr><th></th>${it.exercises.map((x, j) => { const [a, b] = colHead(j); return (a ? `<th>${ss ? L[j] + " " : ""}${a}</th>` : "") + `<th>${ss && !a ? L[j] + " " : ""}${b}</th>`; }).join("")}</tr>`;
-  const rows = it.sets.map((row, k) => {
-    const cells = it.exercises.map((x, j) => { const c = cellInputs(it, i, k, j); return (c.load ? `<td>${c.load}</td>` : "") + `<td>${c.main}${c.gripSel}</td>`; }).join("");
-    const drops = it.exercises.map((x, j) => {
-      const e = row[j];
-      if (e.drop && e.drop.open) {
-        const dx = e.drop.ex ? esc(EX[e.drop.ex].name) : "Drop";
-        return `<div class="drop">${ss ? L[j] + " " : ""}↓ ${dx} ${!e.drop.ex && EX[x].measure === "weight" ? `<input class="f" inputmode="decimal" data-k="${i}.${k}.${j}.drop.weight" placeholder="kg" value="${e.drop.weight != null ? kg(e.drop.weight) : ""}">` : ""}<input class="f" inputmode="numeric" data-k="${i}.${k}.${j}.drop.reps" placeholder="${esc(((refSets(it, j)[k] || {}).drop || {}).reps ?? "Wdh.")}" value="${e.drop.reps ?? ""}"> Wdh.</div>`;
-      }
-      return EX[x].measure !== "time" ? `<button class="tiny" data-drop="${i}.${k}.${j}">+ Drop${ss ? " " + L[j] : ""}</button>` : "";
-    }).join(" ");
-    const span = it.exercises.reduce((n, x) => n + (EX[x].measure === "time" ? 1 : 2), 1);
-    return `<tr><td class="n">${k + 1}</td>${cells}</tr><tr class="droprow"><td></td><td colspan="${span - 1}">${drops}</td></tr>`;
-  }).join("");
+  const colGroups = it.exercises.map(x => `<th colspan="${EX[x].measure === "time" ? 1 : 2}" class="grp">${ss ? esc(shortName(x)) : ""}</th>`).join("");
+  const colHead = it.exercises.map(x => { const m = EX[x].measure; return m === "weight" ? "<th>kg</th><th>Wdh.</th>" : m === "reps" ? "<th>+kg</th><th>Wdh.</th>" : "<th>Sek.</th>"; }).join("");
+  const span = it.exercises.reduce((n, x) => n + (EX[x].measure === "time" ? 1 : 2), 0);
+  const rows = it.sets.map((row, k) => `
+    <tr class="${it.done[k] ? "isdone" : ""}"><td class="n">${k + 1}</td>${it.exercises.map((x, j) => cellHTML(it, i, k, j)).join("")}
+      <td class="ok"><button class="tick ${it.done[k] ? "on" : ""}" data-tick="${i}.${k}" aria-label="Satz erledigt">✓</button></td></tr>
+    <tr class="droprow"><td></td><td colspan="${span + 1}">${it.exercises.map((x, j) => dropHTML(it, i, k, j)).join(" ")}
+      ${it.sets.length > 1 ? `<button class="tiny quiet" data-rmset="${i}.${k}">Satz entfernen</button>` : ""}</td></tr>`).join("");
   return `<div class="card ${ss ? "superset" : ""}">
-    <div class="blockhead"><div class="num">${i + 1}</div><div class="kind">${ss ? "Supersatz · abwechselnd" : "Einzelübung"}</div></div>
-    ${heads.replace(/<\/div><\/div><div class="exhead">/g, '</div></div><div class="exhead">')}
-    <table class="sets">${head}${rows}</table>
+    <div class="blockhead"><div class="num">${i + 1}</div><div class="kind">${ss ? "Supersatz" : "Einzelübung"}</div>
+      <div class="tools"><button class="iconbtn" data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="Nach oben">↑</button><button class="iconbtn" data-down="${i}" ${i === total - 1 ? "disabled" : ""} aria-label="Nach unten">↓</button><button class="iconbtn" data-rm="${i}" aria-label="Entfernen">✕</button></div></div>
+    ${names}
+    <button class="tiny" data-addss="${i}">+ Supersatz</button>
+    <table class="sets">${ss ? `<tr><th></th>${colGroups}<th></th></tr>` : ""}<tr><th></th>${colHead}<th></th></tr>${rows}</table>
     <button class="small" data-addset="${i}">+ Satz</button>
   </div>`;
 }
@@ -386,14 +433,15 @@ function showWorkout() {
     body = `<div class="card"><label class="check"><input type="checkbox" data-core ${d.coreDone ? "checked" : ""}> Core-Workout erledigt</label></div>`;
   } else {
     body = `${d.warmup.length ? `<div class="card"><h2>Aufwärmen</h2>${d.warmup.map((w, n) => `<label class="check"><input type="checkbox" data-warm="${n}" ${w.done ? "checked" : ""}> ${esc(w.minutes + " min " + w.name)}</label>`).join("")}</div>` : ""}
-      ${d.items.map(blockHTML).join("")}
+      ${d.items.map((it, i) => blockHTML(it, i, d.items.length)).join("")}
       <button class="secondary" id="addex">+ Übung hinzufügen</button>
-      ${d.stretches.length ? `<div class="card" style="margin-top:12px"><h2>Dehnen · 20-s-Intervalle</h2>${d.stretches.map((s, n) => `<label class="check"><input type="checkbox" data-str="${n}" ${s.done ? "checked" : ""}> ${esc(SN[s.id] || s.id)}${s.side ? " " + esc(s.side) : ""}</label>`).join("")}</div>` : ""}`;
+      ${d.stretches.length ? `<div class="card" style="margin-top:12px"><h2>Dehnen · 20-s-Intervalle</h2>${d.stretches.map((s, n) => `<div class="check"><input type="checkbox" data-str="${n}" ${s.done ? "checked" : ""} id="str${n}"><label for="str${n}" class="grow">${esc(SN[s.id] || s.id)}${s.side ? " " + esc(s.side) : ""}</label>
+        <button class="iconbtn" data-sup="${n}" ${n === 0 ? "disabled" : ""} aria-label="Nach oben">↑</button><button class="iconbtn" data-sdown="${n}" ${n === d.stretches.length - 1 ? "disabled" : ""} aria-label="Nach unten">↓</button></div>`).join("")}</div>` : ""}`;
   }
   app.innerHTML = `<div id="status" class="status">Auf dem iPhone gesichert</div>
     <div class="bar"><button class="link" id="back">‹ Abbrechen</button></div>
     <h1>${esc(SPLIT(d.split))}</h1>
-    <p class="sub">${esc(LOC(d.location))}${tpl ? " · Vorlage vom " + dateDE(tpl.date) : ""}</p>
+    <p class="sub">${esc(LOC(d.location))}${tpl ? " · Vorlage vom " + dateDE(tpl.date) : ""} · Werte sind die Ziele für heute, ✓ bestätigt den Satz</p>
     ${body}
     <div class="card"><div class="row2">
       <label><div class="muted">Datum</div><input class="f" type="date" id="date" value="${d.date}" style="font-size:16px"></label>
@@ -404,50 +452,78 @@ function showWorkout() {
 }
 function setPath(path, raw) {
   const [i, k, j, ...rest] = path.split(".");
-  const e = draft.items[+i].sets[+k][+j];
-  const key = rest.join(".");
+  const it = draft.items[+i], e = it.sets[+k][+j], key = rest.join(".");
   const v = key === "grip" ? (raw || null) : parseNum(raw);
   if (key.startsWith("drop.")) { e.drop = e.drop || { open: true }; e.drop[key.slice(5)] = v; }
   else e[key] = v;
+  if (key === "reps" || key === "seconds") it.done[+k] = true;
 }
+function rowHasValues(it, k) { return it.sets[k].some((e, j) => (EXMAP()[it.exercises[j]].measure === "time" ? e.seconds : e.reps) != null); }
 function bindWorkout() {
-  app.querySelectorAll("[data-k]").forEach(el => {
-    el.addEventListener("input", () => { setPath(el.dataset.k, el.value); if (el.classList.contains("f") && /\.(reps|seconds)$/.test(el.dataset.k)) el.classList.toggle("done", el.value.trim() !== ""); saveDraft(); });
+  const $$ = s => app.querySelectorAll(s), num = s => s.split(".").map(Number), rerender = () => { saveDraft(); keepScroll(showWorkout); };
+  $$("[data-k]").forEach(el => {
+    el.addEventListener("input", () => { const before = draft.items[+el.dataset.k.split(".")[0]].done[+el.dataset.k.split(".")[1]];
+      setPath(el.dataset.k, el.value); saveDraft();
+      const [i, k] = num(el.dataset.k); if (!before && draft.items[i].done[k]) markRow(i, k); });
     el.addEventListener("change", () => { setPath(el.dataset.k, el.value); saveDraft(); });
   });
-  app.querySelectorAll("[data-drop]").forEach(b => b.onclick = () => { const [i, k, j] = b.dataset.drop.split(".").map(Number); const e = draft.items[i].sets[k][j]; e.drop = { reps: null, weight: null, open: true }; saveDraft(); keepScroll(showWorkout); });
-  app.querySelectorAll("[data-addset]").forEach(b => b.onclick = () => { const it = draft.items[+b.dataset.addset]; const last = it.sets[it.sets.length - 1];
-    it.sets.push(last.map(e => ({ weight: e.weight ?? null, added: e.added ?? null, grip: e.grip ?? null, perSide: e.perSide, reps: null, seconds: null }))); saveDraft(); keepScroll(showWorkout); });
-  app.querySelectorAll("[data-warm]").forEach(c => c.onchange = () => { draft.warmup[+c.dataset.warm].done = c.checked; saveDraft(); });
-  app.querySelectorAll("[data-str]").forEach(c => c.onchange = () => { draft.stretches[+c.dataset.str].done = c.checked; saveDraft(); });
+  $$("[data-tick]").forEach(b => b.onclick = () => { const [i, k] = num(b.dataset.tick); const it = draft.items[i];
+    if (!it.done[k] && !rowHasValues(it, k)) { alert("Bitte zuerst Wiederholungen eintragen."); return; }
+    it.done[k] = !it.done[k]; rerender(); });
+  $$("[data-drop]").forEach(b => b.onclick = () => { const [i, k, j] = num(b.dataset.drop); draft.items[i].sets[k][j].drop = { reps: null, weight: null, open: true }; rerender(); });
+  $$("[data-dropoff]").forEach(b => b.onclick = () => { const [i, k, j] = num(b.dataset.dropoff); delete draft.items[i].sets[k][j].drop; rerender(); });
+  $$("[data-addset]").forEach(b => b.onclick = () => { const it = draft.items[+b.dataset.addset], last = it.sets[it.sets.length - 1];
+    it.sets.push(last.map(e => ({ weight: e.weight ?? null, added: e.added ?? null, grip: e.grip ?? null, perSide: e.perSide, reps: e.reps ?? null, seconds: e.seconds ?? null })));
+    it.done.push(false); rerender(); });
+  $$("[data-rmset]").forEach(b => b.onclick = () => { const [i, k] = num(b.dataset.rmset); const it = draft.items[i];
+    if (it.done[k] && !confirm("Satz " + (k + 1) + " ist schon erledigt. Trotzdem entfernen?")) return;
+    it.sets.splice(k, 1); it.done.splice(k, 1); rerender(); });
+  $$("[data-up]").forEach(b => b.onclick = () => { const i = +b.dataset.up; if (i > 0) { const a = draft.items; [a[i - 1], a[i]] = [a[i], a[i - 1]]; rerender(); } });
+  $$("[data-down]").forEach(b => b.onclick = () => { const i = +b.dataset.down, a = draft.items; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; rerender(); } });
+  $$("[data-rm]").forEach(b => b.onclick = () => { const i = +b.dataset.rm, it = draft.items[i];
+    const names = it.exercises.map(x => EXMAP()[x].name).join(" Supersatz ");
+    if (!confirm(names + (it.done.some(Boolean) ? " hat schon erledigte Sätze. Trotzdem entfernen?" : " entfernen?"))) return;
+    draft.items.splice(i, 1); rerender(); });
+  $$("[data-rmex]").forEach(b => b.onclick = () => { const [i, j] = num(b.dataset.rmex), it = draft.items[i];
+    if (!confirm(EXMAP()[it.exercises[j]].name + " aus dem Supersatz nehmen?")) return;
+    it.exercises.splice(j, 1); it.goals.splice(j, 1); it.sets.forEach(r => r.splice(j, 1)); rerender(); });
+  $$("[data-addss]").forEach(b => b.onclick = () => pickExercise(+b.dataset.addss));
+  $$("[data-warm]").forEach(c => c.onchange = () => { draft.warmup[+c.dataset.warm].done = c.checked; saveDraft(); });
+  $$("[data-str]").forEach(c => c.onchange = () => { draft.stretches[+c.dataset.str].done = c.checked; saveDraft(); });
+  $$("[data-sup]").forEach(b => b.onclick = () => { const n = +b.dataset.sup, a = draft.stretches; if (n > 0) { [a[n - 1], a[n]] = [a[n], a[n - 1]]; rerender(); } });
+  $$("[data-sdown]").forEach(b => b.onclick = () => { const n = +b.dataset.sdown, a = draft.stretches; if (n < a.length - 1) { [a[n + 1], a[n]] = [a[n], a[n + 1]]; rerender(); } });
   const core = app.querySelector("[data-core]"); if (core) core.onchange = () => { draft.coreDone = core.checked; saveDraft(); };
   document.getElementById("date").onchange = e => { draft.date = e.target.value || todayISO(); saveDraft(); };
   document.getElementById("bw").oninput = e => { draft.bodyweight = parseNum(e.target.value); saveDraft(); };
-  const add = document.getElementById("addex"); if (add) add.onclick = pickExercise;
+  const add = document.getElementById("addex"); if (add) add.onclick = () => pickExercise(null);
   document.getElementById("back").onclick = () => { if (confirm("Training abbrechen? Bereits Eingetragenes wird verworfen.")) { draft = null; drop(DRAFT_KEY); drop(PENDING_KEY); state.split = null; showStart(); } };
   document.getElementById("finish").onclick = finish;
 }
+function markRow(i, k) {
+  app.querySelectorAll(`[data-k^="${i}.${k}."]`).forEach(x => x.classList.add("done"));
+  const t = app.querySelector(`[data-tick="${i}.${k}"]`); if (t) t.classList.add("on");
+}
 function keepScroll(fn) { const y = window.scrollY; fn(); window.scrollTo(0, y); }
-function pickExercise() {
+// blockIndex = null: neue Übung am Ende; sonst als Supersatz zu diesem Block
+function pickExercise(blockIndex) {
   const EX = data.exercises.filter(e => e.split === draft.split).concat(data.exercises.filter(e => e.split !== draft.split));
-  const y = window.scrollY;
-  app.innerHTML = `<button class="link" id="cancel">‹ Zurück zum Training</button><h1>Übung hinzufügen</h1>
-    <div class="choices">${EX.map(e => `<button class="choice" data-ex="${e.id}">${esc(e.name)}<small>${esc(SPLIT(e.split))}</small></button>`).join("")}</div>`;
+  const y = window.scrollY, target = blockIndex == null ? null : draft.items[blockIndex];
+  const title = target ? "Supersatz zu " + target.exercises.map(x => EXMAP()[x].name).join(" Supersatz ") : "Übung hinzufügen";
+  app.innerHTML = `<button class="link" id="cancel">‹ Zurück zum Training</button><h1 style="font-size:21px">${esc(title)}</h1>
+    <div class="choices">${EX.filter(e => !target || !target.exercises.includes(e.id)).map(e => `<button class="choice" data-ex="${e.id}">${esc(e.name)}<small>${esc(SPLIT(e.split))}</small></button>`).join("")}</div>`;
   document.getElementById("cancel").onclick = () => { showWorkout(); window.scrollTo(0, y); };
   app.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => {
-    const ex = b.dataset.ex, item = { exercises: [ex] };
-    const l = lastFor(ex, draft.location, { items: [item] }, item);
-    const g = goal(ex, l ? itemSets(l.item, ex) : []);
-    const n = l ? itemSets(l.item, ex).length : 3;
-    draft.items.push({ exercises: [ex], ref: [l ? { sid: l.session.id, idx: l.session.items.indexOf(l.item) } : null], goals: [g],
-      sets: Array.from({ length: n }, (_, k) => [prefill(ex, l, k, g)]) });
-    saveDraft(); showWorkout(); window.scrollTo(0, document.body.scrollHeight);
+    const ex = b.dataset.ex;
+    if (target) { addExerciseToItem(target, ex, draft.location); saveDraft(); showWorkout(); window.scrollTo(0, y); }
+    else { draft.items.push(makeItem([ex], draft.location, null, null)); saveDraft(); showWorkout(); window.scrollTo(0, document.body.scrollHeight); }
   });
   window.scrollTo(0, 0);
 }
 async function finish() {
   const s = draftToSession(draft, true);
-  if (!s.items.length && !s.core && !s.stretches.length) { alert("Es ist noch nichts eingetragen."); return; }
+  if (!s.items.length && !s.core && !s.stretches.length) { alert("Es ist noch kein Satz mit ✓ bestätigt."); return; }
+  const open = draft.items.reduce((n, it) => n + it.done.filter(x => !x).length, 0);
+  if (open && !confirm(open + " Sätze sind nicht mit ✓ bestätigt und werden nicht gespeichert. Trotzdem beenden?")) return;
   const btn = document.getElementById("finish"); btn.disabled = true; btn.textContent = "Speichert …";
   try {
     clearTimeout(saveTimer);
